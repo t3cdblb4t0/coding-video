@@ -5,54 +5,44 @@
 <body>
 <canvas id="c"></canvas>
 <script type="module">
-import { init, renderFrame, warmup } from './main.js';
+import { init, renderFrame, warmup, saveState, loadState } from './main.js';
 
 const canvas = document.getElementById('c');
-const FPS = 30;
-let encoder = null, out = [], decoderConfig = null;
-
-function b64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+let FPS = 24, encoder = null, out = [], decoderConfig = null, chunkStart = 0;
+const b64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
 
 window.api = {
-  async init() { const info = await init(canvas); return info; },
-
-  // a single still (PNG, data URL) with warm-up so strokes are settled
+  async init() { const info = await init(canvas); FPS = info.fps; return info; },
   still(t) { warmup(t); renderFrame(t); return canvas.toDataURL('image/png'); },
-
-  async startEncoder({ bitrate = 10e6 } = {}) {
-    out = []; decoderConfig = null;
+  warm(t) { warmup(t); },
+  saveState, loadState,
+  async startEncoder({ bitrate, f0 }) {
+    out = []; decoderConfig = null; chunkStart = f0;
     encoder = new VideoEncoder({
       output: (chunk, meta) => {
         if (meta && meta.decoderConfig && meta.decoderConfig.description && !decoderConfig)
           decoderConfig = { codec: meta.decoderConfig.codec, description: b64(new Uint8Array(meta.decoderConfig.description)) };
         const buf = new Uint8Array(chunk.byteLength); chunk.copyTo(buf);
-        out.push({ key: chunk.type === 'key', ts: chunk.timestamp, data: b64(buf) });
+        out.push({ key: chunk.type === 'key', data: b64(buf) });
       },
       error: (e) => { window.__encErr = String(e); },
     });
-    const cfg = { codec: 'avc1.640028', width: canvas.width, height: canvas.height, bitrate, framerate: FPS,
-      avc: { format: 'avc' }, latencyMode: 'quality', bitrateMode: 'variable' };
-    const sup = await VideoEncoder.isConfigSupported(cfg);
-    encoder.configure(sup.supported ? cfg : { ...cfg, codec: 'avc1.42E028' });
-    return sup.supported;
+    encoder.configure({ codec: 'avc1.640028', width: canvas.width, height: canvas.height, bitrate, framerate: FPS,
+      avc: { format: 'avc' }, latencyMode: 'quality', bitrateMode: 'variable' });
   },
-
-  warm(t) { warmup(t); },
-
-  // render + encode frames [i0, i1) of the clip starting at song time t0
-  async encodeRange(t0, i0, i1) {
-    for (let i = i0; i < i1; i++) {
-      renderFrame(t0 + i / FPS);
+  // render + encode global frames [f0, f1)
+  async encodeFrames(f0, f1) {
+    for (let f = f0; f < f1; f++) {
+      renderFrame(f / FPS);
+      const i = f - chunkStart;
       const vf = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
       encoder.encode(vf, { keyFrame: i % (2 * FPS) === 0 });
       vf.close();
       while (encoder.encodeQueueSize > 4) await new Promise((r) => setTimeout(r, 2));
     }
     if (window.__encErr) throw new Error(window.__encErr);
-    const chunks = out; out = [];
-    return { chunks, decoderConfig };
+    const chunks = out; out = []; return { chunks, decoderConfig };
   },
-
   async finish() { await encoder.flush(); const chunks = out; out = []; encoder.close(); return { chunks, decoderConfig }; },
 };
 window.__ready = true;

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Mux WebCodecs H.264 output with the ORIGINAL AAC track of 梵高.mp4 (no audio re-encode).
 
-usage: python3 tools/mux.py out/sample_chorus1            -> out/sample_chorus1.mp4
-       (reads out/<name>.h264 + out/<name>.json written by tools/render.js)
+usage: python3 tools/mux.py OUT.mp4 CHUNK_BASE [CHUNK_BASE ...]
+       (each CHUNK_BASE has .h264 + .json written by `tools/render.js chunk`; chunks must be contiguous)
 """
 import base64, json, struct, sys, os
 
@@ -111,28 +111,42 @@ def trak(tid, kind, ts, media_dur, movie_dur, w, h, stbl_box, elst=None):
     return box('trak', *parts)
 
 
+def load_video(bases):
+    """Concatenate chunk outputs of tools/render.js (each starts with a key frame)."""
+    metas = [json.load(open(b + '.json')) for b in bases]
+    metas, bases = zip(*sorted(zip(metas, bases), key=lambda mb: mb[0]['f0']))
+    for a, b in zip(metas, metas[1:]):
+        assert a['f1'] == b['f0'], f"gap/overlap between chunks: {a['f1']} vs {b['f0']}"
+        assert a['avcC'] == b['avcC'], 'chunks were encoded with different SPS/PPS'
+    data, samples = [], []
+    for m, b in zip(metas, bases):
+        raw = open(b + '.h264', 'rb').read(); o = 0
+        assert m['samples'][0]['key'], 'chunk must start with a key frame'
+        for sm in m['samples']: samples.append({'size': sm['size'], 'key': sm['key'], 'data': raw[o:o + sm['size']]}); o += sm['size']
+    m0 = metas[0]
+    return {'fps': m0['fps'], 'W': m0['width'], 'H': m0['height'], 'avcC': base64.b64decode(m0['avcC']), 'codec': m0['codec'],
+            'start': m0['f0'] / m0['fps'], 'samples': samples}
+
+
 def main():
-    base = os.path.join(ROOT, sys.argv[1]) if not os.path.isabs(sys.argv[1]) else sys.argv[1]
-    meta = json.load(open(base + '.json'))
-    vbin = open(base + '.h264', 'rb').read()
-    fps, W, H = meta['fps'], meta['width'], meta['height']
-    avcC = base64.b64decode(meta['avcC'])
-    vs = meta['samples']; voffs, o = [], 0
-    for s in vs: voffs.append(o); o += s['size']
-    VTS, VDUR = 15360, 15360 // fps
+    out, bases = sys.argv[1], sys.argv[2:]
+    absp = lambda p: p if os.path.isabs(p) else os.path.join(ROOT, p)
+    out, bases = absp(out), [absp(b) for b in bases]
+    v = load_video(bases)
+    fps, W, H, vs = v['fps'], v['W'], v['H'], v['samples']
+    VTS = fps * 512; VDUR = 512
     avc1 = box('avc1', b'\0' * 6, struct.pack('>H', 1), b'\0' * 16, struct.pack('>HHIIIH', W, H, 0x480000, 0x480000, 0, 1),
-               b'\0' * 32, struct.pack('>Hh', 0x18, -1), box('avcC', avcC))
+               b'\0' * 32, struct.pack('>Hh', 0x18, -1), box('avcC', v['avcC']))
     vstsd = full('stsd', 0, 0, struct.pack('>I', 1), avc1)
 
     abuf, ATS, astsd, asamples, mt = source_audio()
-    t0, t1 = meta['start'], meta['start'] + len(vs) / fps
+    t0 = v['start']; t1 = t0 + len(vs) / fps
     first = max(0, int((t0 * ATS + mt) // 1024) - 1)                 # one frame of pre-roll
     last = min(len(asamples), int(-(-(t1 * ATS + mt) // 1024)))
     skip = int(round(t0 * ATS + mt)) - first * 1024
     asel = asamples[first:last]
 
-    # interleave ~1 s chunks
-    chunks, vi, ai = [], 0, 0
+    chunks, vi, ai = [], 0, 0                                         # interleave ~1 s chunks
     while vi < len(vs) or ai < len(asel):
         tv = vi / fps; ta = (first + ai) * 1024 / ATS - mt / ATS - t0
         if vi < len(vs) and (ai >= len(asel) or tv <= ta):
@@ -156,18 +170,15 @@ def main():
         return box('moov', mvhd, vt, at)
     ftyp = box('ftyp', b'isom', struct.pack('>I', 512), b'isomiso2avc1mp41')
     payload_len = sum(s['size'] for s in vs) + sum(s for _, s in asel)
-    moov = build(0)
-    mdat_start = len(ftyp) + len(moov) + 16
-    moov = build(mdat_start)
-    out = base + '.mp4'
+    moov = build(0); moov = build(len(ftyp) + len(moov) + 16)
     with open(out, 'wb') as f:
         f.write(ftyp); f.write(moov); f.write(struct.pack('>I4sQ', 1, b'mdat', 16 + payload_len))
         for kind, i, n in chunks:
             for k in range(i, i + n):
-                if kind == 'v': f.write(vbin[voffs[k]:voffs[k] + vs[k]['size']])
+                if kind == 'v': f.write(vs[k]['data'])
                 else: off, sz = asel[k]; f.write(abuf[off:off + sz])
-    print(f'{out}: {len(vs)} video frames ({sum(s["key"] for s in vs)} key), {len(asel)} AAC frames, '
-          f'{(t1 - t0):.2f}s, {os.path.getsize(out) / 1e6:.1f} MB, codec {meta.get("codec")}')
+    print(f'{out}: {len(vs)} video frames @ {fps} fps ({sum(s["key"] for s in vs)} key), {len(asel)} AAC frames, '
+          f'{(t1 - t0):.2f}s, {os.path.getsize(out) / 1e6:.1f} MB, codec {v["codec"]}')
 
 
 if __name__ == '__main__':

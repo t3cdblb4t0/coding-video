@@ -1,5 +1,7 @@
 assets/fonts/*.ttf
 out/stills/
+out/full/
+out/test/
 out/*.h264
 out/*.json
 node_modules/
