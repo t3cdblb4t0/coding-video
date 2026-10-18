@@ -1,0 +1,1541 @@
+{
+ "audio": "梵高.mp4 (audio only, video track is black)",
+ "duration": 198.25,
+ "sections": [
+  {
+   "name": "Piano intro",
+   "start": 0.0,
+   "end": 3.8
+  },
+  {
+   "name": "Intro spoken",
+   "start": 3.8,
+   "end": 11.0
+  },
+  {
+   "name": "Verse 1 (1888, fast rap ~1.3s/line)",
+   "start": 12.4,
+   "end": 35.0
+  },
+  {
+   "name": "Chorus 1",
+   "start": 35.2,
+   "end": 56.0
+  },
+  {
+   "name": "Verse 2 (1889)",
+   "start": 57.35,
+   "end": 71.2
+  },
+  {
+   "name": "Double Time",
+   "start": 71.3,
+   "end": 77.5
+  },
+  {
+   "name": "Build",
+   "start": 77.8,
+   "end": 83.0
+  },
+  {
+   "name": "Spoken, beat drops out",
+   "start": 83.2,
+   "end": 93.3
+  },
+  {
+   "name": "Chorus 2",
+   "start": 95.7,
+   "end": 120.0
+  },
+  {
+   "name": "Bridge (soft piano)",
+   "start": 121.8,
+   "end": 136.0
+  },
+  {
+   "name": "Outro (drums back)",
+   "start": 137.0,
+   "end": 152.2
+  },
+  {
+   "name": "Ending spoken (piano)",
+   "start": 154.6,
+   "end": 161.6
+  },
+  {
+   "name": "Instrumental climax (no vocals, loudest)",
+   "start": 164.0,
+   "end": 178.5
+  },
+  {
+   "name": "Fade + silence",
+   "start": 178.5,
+   "end": 188.0
+  },
+  {
+   "name": "Reprise spoken (not in lyric sheet)",
+   "start": 190.2,
+   "end": 198.25
+  }
+ ],
+ "lines": [
+  {
+   "section": "Intro",
+   "text": "亲爱的提奥",
+   "start": 3.83,
+   "end": 5.08,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 2,
+   "beat_in_bar": 1.97,
+   "type": "lyric",
+   "char_times": [
+    3.83,
+    4.07,
+    4.25,
+    4.43,
+    4.73
+   ]
+  },
+  {
+   "section": "Intro",
+   "text": "今晚的星星 比白天还亮",
+   "start": 6.58,
+   "end": 10.1,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 3,
+   "beat_in_bar": 2.14,
+   "type": "lyric",
+   "char_times": [
+    6.58,
+    6.82,
+    7.06,
+    7.18,
+    7.42,
+    8.85,
+    9.15,
+    9.33,
+    9.51,
+    9.75
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "(一八八八！)",
+   "start": 12.4,
+   "end": 13.31,
+   "matched": 0.25,
+   "confidence": "low (interpolated)",
+   "note": "识别成\"一爸嘎/你啪呱\"，人声能量确认在 12.4s",
+   "bar": 5,
+   "beat_in_bar": 2.97,
+   "type": "lyric",
+   "char_times": [
+    12.4,
+    12.65,
+    12.89,
+    13.14
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "画架一扛 往南走",
+   "start": 13.36,
+   "end": 14.75,
+   "matched": 0.86,
+   "confidence": "high",
+   "bar": 5,
+   "beat_in_bar": 4.43,
+   "type": "lyric",
+   "char_times": [
+    13.36,
+    13.61,
+    13.79,
+    13.91,
+    14.15,
+    14.27,
+    14.45
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "太阳一烫 黄满手",
+   "start": 14.8,
+   "end": 16.0,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 6,
+   "beat_in_bar": 2.61,
+   "type": "lyric",
+   "char_times": [
+    14.8,
+    14.92,
+    15.04,
+    15.22,
+    15.4,
+    15.58,
+    15.7
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "兜里没钱 只剩酒",
+   "start": 16.05,
+   "end": 17.32,
+   "matched": 0.29,
+   "confidence": "low (interpolated)",
+   "note": "按说唱节拍网格校正（每句 2 拍）",
+   "bar": 6,
+   "beat_in_bar": 4.5,
+   "type": "lyric",
+   "char_times": [
+    16.05,
+    16.23,
+    16.42,
+    16.61,
+    16.79,
+    16.98,
+    17.17
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "苦艾一口 就上头",
+   "start": 17.37,
+   "end": 18.59,
+   "matched": 0.71,
+   "confidence": "high",
+   "bar": 7,
+   "beat_in_bar": 2.51,
+   "type": "lyric",
+   "char_times": [
+    17.37,
+    17.56,
+    17.75,
+    17.87,
+    18.05,
+    18.16,
+    18.41
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "盼高更来 当盟友",
+   "start": 18.64,
+   "end": 19.95,
+   "matched": 0.86,
+   "confidence": "high",
+   "bar": 7,
+   "beat_in_bar": 4.43,
+   "type": "lyric",
+   "char_times": [
+    18.64,
+    18.88,
+    19.06,
+    19.18,
+    19.36,
+    19.54,
+    19.72
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "一间屋里 俩猛兽",
+   "start": 20.0,
+   "end": 21.27,
+   "matched": 0.0,
+   "confidence": "low (interpolated)",
+   "note": "按说唱节拍网格校正（每句 2 拍）",
+   "bar": 8,
+   "beat_in_bar": 2.49,
+   "type": "lyric",
+   "char_times": [
+    20.0,
+    20.18,
+    20.35,
+    20.52,
+    20.7,
+    20.88,
+    21.05
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "他骂我疯 我骂他丑",
+   "start": 21.32,
+   "end": 22.43,
+   "matched": 0.25,
+   "confidence": "low (interpolated)",
+   "note": "按说唱节拍网格校正（每句 2 拍）",
+   "bar": 8,
+   "beat_in_bar": 4.5,
+   "type": "lyric",
+   "char_times": [
+    21.32,
+    21.45,
+    21.57,
+    21.7,
+    21.83,
+    21.95,
+    22.08,
+    22.21
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "平安夜 他摔门撒手",
+   "start": 22.48,
+   "end": 23.93,
+   "matched": 0.88,
+   "confidence": "high",
+   "bar": 9,
+   "beat_in_bar": 2.25,
+   "type": "lyric",
+   "char_times": [
+    22.48,
+    22.6,
+    22.72,
+    22.84,
+    22.96,
+    23.2,
+    23.38,
+    23.56
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "剃刀一抖 血往下流",
+   "start": 23.98,
+   "end": 25.25,
+   "matched": 0.75,
+   "confidence": "high",
+   "bar": 9,
+   "beat_in_bar": 4.53,
+   "type": "lyric",
+   "char_times": [
+    23.98,
+    24.16,
+    24.28,
+    24.43,
+    24.58,
+    24.76,
+    24.94,
+    25.12
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "割下左耳 塞她手",
+   "start": 25.3,
+   "end": 26.51,
+   "matched": 0.71,
+   "confidence": "high",
+   "bar": 10,
+   "beat_in_bar": 2.53,
+   "type": "lyric",
+   "char_times": [
+    25.3,
+    25.48,
+    25.6,
+    25.78,
+    25.9,
+    26.08,
+    26.26
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "全镇签名 堵在门口",
+   "start": 26.56,
+   "end": 27.83,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 10,
+   "beat_in_bar": 4.44,
+   "type": "lyric",
+   "char_times": [
+    26.56,
+    26.74,
+    26.92,
+    27.04,
+    27.22,
+    27.34,
+    27.46,
+    27.64
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "说这疯子 赶出镇口",
+   "start": 27.88,
+   "end": 29.21,
+   "matched": 0.75,
+   "confidence": "high",
+   "bar": 11,
+   "beat_in_bar": 2.44,
+   "type": "lyric",
+   "char_times": [
+    27.88,
+    28.06,
+    28.24,
+    28.36,
+    28.6,
+    28.72,
+    28.9,
+    29.08
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "九百张画 没人收",
+   "start": 29.26,
+   "end": 30.47,
+   "matched": 0.43,
+   "confidence": "medium",
+   "bar": 11,
+   "beat_in_bar": 4.53,
+   "type": "lyric",
+   "char_times": [
+    29.26,
+    29.44,
+    29.62,
+    29.8,
+    29.98,
+    30.04,
+    30.16
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "骨气嚼碎 咽进喉",
+   "start": 30.52,
+   "end": 31.79,
+   "matched": 0.71,
+   "confidence": "high",
+   "bar": 12,
+   "beat_in_bar": 2.45,
+   "type": "lyric",
+   "char_times": [
+    30.52,
+    30.7,
+    30.85,
+    31.0,
+    31.18,
+    31.36,
+    31.54
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "画商摆手 我不回头",
+   "start": 31.84,
+   "end": 33.17,
+   "matched": 0.88,
+   "confidence": "high",
+   "bar": 12,
+   "beat_in_bar": 4.45,
+   "type": "lyric",
+   "char_times": [
+    31.84,
+    32.02,
+    32.2,
+    32.35,
+    32.5,
+    32.62,
+    32.74,
+    32.92
+   ]
+  },
+  {
+   "section": "Verse 1",
+   "text": "一直画 画不到白头",
+   "start": 33.22,
+   "end": 35.12,
+   "matched": 0.75,
+   "confidence": "high",
+   "bar": 13,
+   "beat_in_bar": 2.54,
+   "type": "lyric",
+   "char_times": [
+    33.22,
+    33.34,
+    33.54,
+    33.74,
+    33.94,
+    34.06,
+    34.3,
+    34.54
+   ]
+  },
+  {
+   "section": "Chorus 1",
+   "text": "星空在烫 孤独在涨",
+   "start": 35.17,
+   "end": 37.67,
+   "matched": 0.38,
+   "confidence": "low (interpolated)",
+   "note": "按副歌网格校正（每句 1 小节）",
+   "bar": 14,
+   "beat_in_bar": 1.5,
+   "type": "lyric",
+   "char_times": [
+    35.17,
+    35.47,
+    35.77,
+    36.07,
+    36.37,
+    36.67,
+    36.97,
+    37.33
+   ]
+  },
+  {
+   "section": "Chorus 1",
+   "text": "蓝是忧伤 黄是倔强",
+   "start": 37.72,
+   "end": 40.11,
+   "matched": 0.75,
+   "confidence": "high",
+   "bar": 15,
+   "beat_in_bar": 1.36,
+   "type": "lyric",
+   "char_times": [
+    37.72,
+    37.96,
+    38.29,
+    38.62,
+    39.16,
+    39.34,
+    39.52,
+    39.76
+   ]
+  },
+  {
+   "section": "Chorus 1",
+   "text": "活着 没人捧场",
+   "start": 40.36,
+   "end": 41.79,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 16,
+   "beat_in_bar": 1.37,
+   "type": "lyric",
+   "char_times": [
+    40.36,
+    40.6,
+    40.84,
+    40.96,
+    41.14,
+    41.44
+   ]
+  },
+  {
+   "section": "Chorus 1",
+   "text": "死后 万人鼓掌",
+   "start": 42.72,
+   "end": 44.51,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 16,
+   "beat_in_bar": 4.94,
+   "type": "lyric",
+   "char_times": [
+    42.72,
+    43.02,
+    43.44,
+    43.62,
+    43.86,
+    44.16
+   ]
+  },
+  {
+   "section": "Chorus 1",
+   "text": "你说我疯 你说我狂",
+   "start": 44.64,
+   "end": 46.97,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 17,
+   "beat_in_bar": 3.86,
+   "type": "lyric",
+   "char_times": [
+    44.64,
+    44.88,
+    45.12,
+    45.3,
+    45.78,
+    45.96,
+    46.38,
+    46.62
+   ]
+  },
+  {
+   "section": "Chorus 1",
+   "text": "星星不疯 怎么发光",
+   "start": 47.28,
+   "end": 49.55,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 18,
+   "beat_in_bar": 3.86,
+   "type": "lyric",
+   "char_times": [
+    47.28,
+    47.52,
+    47.76,
+    47.94,
+    48.36,
+    48.6,
+    48.84,
+    49.2
+   ]
+  },
+  {
+   "section": "Chorus 1",
+   "text": "烧到最亮 才被仰望",
+   "start": 50.04,
+   "end": 52.19,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 19,
+   "beat_in_bar": 4.04,
+   "type": "lyric",
+   "char_times": [
+    50.04,
+    50.16,
+    50.4,
+    50.64,
+    50.94,
+    51.24,
+    51.66,
+    51.84
+   ]
+  },
+  {
+   "section": "Chorus 1",
+   "text": "我是一颗星 烧在他乡",
+   "start": 52.79,
+   "end": 55.95,
+   "matched": 0.78,
+   "note": "1:00 左右\"烧在他乡\"又重复了一次，见下面的 echo",
+   "confidence": "high",
+   "bar": 20,
+   "beat_in_bar": 4.21,
+   "type": "lyric",
+   "char_times": [
+    52.79,
+    52.91,
+    53.09,
+    53.69,
+    54.3,
+    54.9,
+    55.14,
+    55.32,
+    55.56
+   ]
+  },
+  {
+   "section": "Chorus 1",
+   "text": "(耶)",
+   "type": "adlib",
+   "start": 56.85,
+   "end": 57.1,
+   "confidence": "medium",
+   "note": "识别为\"耶\"",
+   "bar": 22,
+   "beat_in_bar": 2.37
+  },
+  {
+   "section": "Verse 2",
+   "text": "(一八八九！)",
+   "start": 57.35,
+   "end": 58.55,
+   "matched": 0,
+   "note": "用户确认约 57 秒；人声能量在 57.35–58.5s",
+   "confidence": "confirmed",
+   "bar": 22,
+   "beat_in_bar": 3.13,
+   "type": "lyric",
+   "char_times": [
+    57.35,
+    57.67,
+    57.99,
+    58.31
+   ]
+  },
+  {
+   "section": "Verse 2",
+   "text": "(烧在他乡)",
+   "type": "echo",
+   "start": 59.95,
+   "end": 61.4,
+   "confidence": "high",
+   "note": "副歌最后一句的回声",
+   "bar": 23,
+   "beat_in_bar": 3.07
+  },
+  {
+   "section": "Verse 2",
+   "text": "(耶)",
+   "type": "adlib",
+   "start": 63.45,
+   "end": 63.8,
+   "confidence": "confirmed",
+   "note": "用户确认 1:03–1:06 之间有几声\"耶\"",
+   "bar": 24,
+   "beat_in_bar": 4.38
+  },
+  {
+   "section": "Verse 2",
+   "text": "(耶)",
+   "type": "adlib",
+   "start": 64.75,
+   "end": 65.0,
+   "confidence": "confirmed",
+   "bar": 25,
+   "beat_in_bar": 2.35
+  },
+  {
+   "section": "Verse 2",
+   "text": "(耶)",
+   "type": "adlib",
+   "start": 65.4,
+   "end": 66.0,
+   "confidence": "confirmed",
+   "bar": 25,
+   "beat_in_bar": 3.33
+  },
+  {
+   "section": "Verse 2",
+   "text": "自己走进 疗养院",
+   "start": 66.08,
+   "end": 67.41,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 25,
+   "beat_in_bar": 4.36,
+   "type": "lyric",
+   "char_times": [
+    66.08,
+    66.26,
+    66.5,
+    66.68,
+    66.86,
+    67.04,
+    67.16
+   ]
+  },
+  {
+   "section": "Verse 2",
+   "text": "铁窗把天 剪成片",
+   "start": 67.46,
+   "end": 68.79,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 26,
+   "beat_in_bar": 2.46,
+   "type": "lyric",
+   "char_times": [
+    67.46,
+    67.64,
+    67.82,
+    68.0,
+    68.12,
+    68.3,
+    68.48
+   ]
+  },
+  {
+   "section": "Verse 2",
+   "text": "白天只能 看墙面",
+   "start": 68.84,
+   "end": 70.05,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 26,
+   "beat_in_bar": 4.55,
+   "type": "lyric",
+   "char_times": [
+    68.84,
+    68.96,
+    69.14,
+    69.26,
+    69.44,
+    69.68,
+    69.8
+   ]
+  },
+  {
+   "section": "Verse 2",
+   "text": "夜里星空 在窗前",
+   "start": 70.1,
+   "end": 71.31,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 27,
+   "beat_in_bar": 2.46,
+   "type": "lyric",
+   "char_times": [
+    70.1,
+    70.28,
+    70.46,
+    70.58,
+    70.76,
+    70.94,
+    71.12
+   ]
+  },
+  {
+   "section": "Double Time",
+   "text": "柏树是火 星是漩",
+   "start": 71.36,
+   "end": 72.75,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 27,
+   "beat_in_bar": 4.37,
+   "type": "lyric",
+   "char_times": [
+    71.36,
+    71.6,
+    71.72,
+    71.9,
+    72.08,
+    72.26,
+    72.44
+   ]
+  },
+  {
+   "section": "Double Time",
+   "text": "月亮是橙 挂天边",
+   "start": 72.8,
+   "end": 74.01,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 28,
+   "beat_in_bar": 2.55,
+   "type": "lyric",
+   "char_times": [
+    72.8,
+    72.92,
+    73.04,
+    73.22,
+    73.4,
+    73.58,
+    73.76
+   ]
+  },
+  {
+   "section": "Double Time",
+   "text": "医生说 你要安眠",
+   "start": 74.06,
+   "end": 75.33,
+   "matched": 0.86,
+   "confidence": "high",
+   "bar": 28,
+   "beat_in_bar": 4.46,
+   "type": "lyric",
+   "char_times": [
+    74.06,
+    74.18,
+    74.42,
+    74.6,
+    74.78,
+    74.93,
+    75.08
+   ]
+  },
+  {
+   "section": "Double Time",
+   "text": "我说 灵感正在点燃",
+   "start": 75.38,
+   "end": 77.99,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 29,
+   "beat_in_bar": 2.47,
+   "type": "lyric",
+   "char_times": [
+    75.38,
+    75.5,
+    75.74,
+    75.86,
+    76.04,
+    76.16,
+    76.46,
+    76.7
+   ]
+  },
+  {
+   "section": "Build",
+   "text": "九零年 奥维尔麦田",
+   "start": 78.04,
+   "end": 80.52,
+   "matched": 0.38,
+   "confidence": "low (interpolated)",
+   "note": "按节拍网格校正",
+   "bar": 30,
+   "beat_in_bar": 2.5,
+   "type": "lyric",
+   "char_times": [
+    78.04,
+    78.22,
+    78.4,
+    78.79,
+    79.18,
+    79.57,
+    79.96,
+    80.35
+   ]
+  },
+  {
+   "section": "Build",
+   "text": "乌鸦压着 半边天",
+   "start": 80.57,
+   "end": 82.24,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 31,
+   "beat_in_bar": 2.34,
+   "type": "lyric",
+   "char_times": [
+    80.57,
+    80.81,
+    81.05,
+    81.23,
+    81.41,
+    81.59,
+    81.89
+   ]
+  },
+  {
+   "section": "Spoken",
+   "text": "枪声很轻 像句晚安",
+   "start": 83.22,
+   "end": 85.43,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 32,
+   "beat_in_bar": 2.35,
+   "type": "lyric",
+   "char_times": [
+    83.22,
+    83.4,
+    83.64,
+    83.82,
+    84.36,
+    84.6,
+    84.84,
+    85.08
+   ]
+  },
+  {
+   "section": "Spoken",
+   "text": "提奥 只多撑了半年",
+   "start": 85.74,
+   "end": 87.59,
+   "matched": 0.88,
+   "confidence": "high",
+   "bar": 33,
+   "beat_in_bar": 2.18,
+   "type": "lyric",
+   "char_times": [
+    85.74,
+    86.04,
+    86.16,
+    86.43,
+    86.7,
+    86.88,
+    87.06,
+    87.24
+   ]
+  },
+  {
+   "section": "Spoken",
+   "text": "墓碑并肩",
+   "start": 88.56,
+   "end": 89.45,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 34,
+   "beat_in_bar": 2.45,
+   "type": "lyric",
+   "char_times": [
+    88.56,
+    88.74,
+    88.92,
+    89.1
+   ]
+  },
+  {
+   "section": "Spoken",
+   "text": "藤蔓缠了 一百年",
+   "start": 90.84,
+   "end": 92.93,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 35,
+   "beat_in_bar": 1.91,
+   "type": "lyric",
+   "char_times": [
+    90.84,
+    91.2,
+    91.44,
+    91.74,
+    92.1,
+    92.34,
+    92.58
+   ]
+  },
+  {
+   "section": "Chorus 2",
+   "text": "星空在烫 孤独在涨",
+   "start": 95.85,
+   "end": 98.24,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 37,
+   "beat_in_bar": 1.5,
+   "type": "lyric",
+   "char_times": [
+    95.85,
+    96.15,
+    96.45,
+    96.69,
+    97.23,
+    97.47,
+    97.65,
+    97.89
+   ]
+  },
+  {
+   "section": "Chorus 2",
+   "text": "蓝是忧伤 黄是倔强",
+   "start": 98.43,
+   "end": 100.82,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 38,
+   "beat_in_bar": 1.42,
+   "type": "lyric",
+   "char_times": [
+    98.43,
+    98.67,
+    99.15,
+    99.33,
+    99.81,
+    99.93,
+    100.17,
+    100.47
+   ]
+  },
+  {
+   "section": "Chorus 2",
+   "text": "活着 没人捧场",
+   "start": 101.07,
+   "end": 102.44,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 39,
+   "beat_in_bar": 1.42,
+   "type": "lyric",
+   "char_times": [
+    101.07,
+    101.25,
+    101.49,
+    101.61,
+    101.85,
+    102.09
+   ]
+  },
+  {
+   "section": "Chorus 2",
+   "text": "死后 万人鼓掌",
+   "start": 103.29,
+   "end": 105.14,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 39,
+   "beat_in_bar": 4.79,
+   "type": "lyric",
+   "char_times": [
+    103.29,
+    103.71,
+    104.07,
+    104.25,
+    104.49,
+    104.79
+   ]
+  },
+  {
+   "section": "Chorus 2",
+   "text": "你说我疯 你说我狂",
+   "start": 105.33,
+   "end": 107.66,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 40,
+   "beat_in_bar": 3.88,
+   "type": "lyric",
+   "char_times": [
+    105.33,
+    105.57,
+    105.81,
+    105.99,
+    106.41,
+    106.65,
+    107.01,
+    107.31
+   ]
+  },
+  {
+   "section": "Chorus 2",
+   "text": "星星不疯 怎么发光",
+   "start": 107.97,
+   "end": 110.18,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 41,
+   "beat_in_bar": 3.88,
+   "type": "lyric",
+   "char_times": [
+    107.97,
+    108.21,
+    108.39,
+    108.57,
+    108.99,
+    109.23,
+    109.53,
+    109.83
+   ]
+  },
+  {
+   "section": "Chorus 2",
+   "text": "烧到最亮 才被仰望",
+   "start": 110.67,
+   "end": 112.88,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 42,
+   "beat_in_bar": 3.98,
+   "type": "lyric",
+   "char_times": [
+    110.67,
+    110.85,
+    111.03,
+    111.27,
+    111.57,
+    111.93,
+    112.29,
+    112.53
+   ]
+  },
+  {
+   "section": "Chorus 2",
+   "text": "我是一颗星 烧在他乡",
+   "start": 113.45,
+   "end": 119.9,
+   "matched": 0.67,
+   "note": "这句重复唱了两遍（1:53 和 1:56）",
+   "confidence": "medium",
+   "bar": 43,
+   "beat_in_bar": 4.19,
+   "type": "lyric",
+   "char_times": [
+    113.45,
+    113.63,
+    113.81,
+    114.02,
+    114.23,
+    114.45,
+    114.67,
+    114.89,
+    115.13
+   ]
+  },
+  {
+   "section": "Bridge",
+   "text": "六百封信 你细品",
+   "start": 121.81,
+   "end": 123.54,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 46,
+   "beat_in_bar": 4.87,
+   "type": "lyric",
+   "char_times": [
+    121.81,
+    122.05,
+    122.23,
+    122.47,
+    122.71,
+    122.95,
+    123.19
+   ]
+  },
+  {
+   "section": "Bridge",
+   "text": "我装坚强 装自信",
+   "start": 124.31,
+   "end": 126.16,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 47,
+   "beat_in_bar": 4.66,
+   "type": "lyric",
+   "char_times": [
+    124.31,
+    124.49,
+    124.79,
+    125.03,
+    125.33,
+    125.57,
+    125.81
+   ]
+  },
+  {
+   "section": "Bridge",
+   "text": "你给颜料 给体温",
+   "start": 127.41,
+   "end": 128.84,
+   "matched": 0.86,
+   "confidence": "high",
+   "bar": 49,
+   "beat_in_bar": 1.36,
+   "type": "lyric",
+   "char_times": [
+    127.41,
+    127.59,
+    127.77,
+    128.01,
+    128.16,
+    128.31,
+    128.49
+   ]
+  },
+  {
+   "section": "Bridge",
+   "text": "全世界不信",
+   "start": 129.77,
+   "end": 131.14,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 49,
+   "beat_in_bar": 4.94,
+   "type": "lyric",
+   "char_times": [
+    129.77,
+    130.01,
+    130.37,
+    130.61,
+    130.79
+   ]
+  },
+  {
+   "section": "Bridge",
+   "text": "只有你信",
+   "start": 132.08,
+   "end": 133.03,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 50,
+   "beat_in_bar": 4.44,
+   "type": "lyric",
+   "char_times": [
+    132.08,
+    132.26,
+    132.44,
+    132.68
+   ]
+  },
+  {
+   "section": "Bridge",
+   "text": "我就你 一个知音",
+   "start": 134.71,
+   "end": 136.74,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 51,
+   "beat_in_bar": 4.43,
+   "type": "lyric",
+   "char_times": [
+    134.71,
+    134.95,
+    135.13,
+    135.67,
+    135.85,
+    136.03,
+    136.39
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "一百年后 排队看星",
+   "start": 137.05,
+   "end": 138.5,
+   "matched": 0.88,
+   "confidence": "high",
+   "bar": 52,
+   "beat_in_bar": 3.98,
+   "type": "lyric",
+   "char_times": [
+    137.05,
+    137.23,
+    137.41,
+    137.53,
+    137.71,
+    137.89,
+    138.04,
+    138.19
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "闪光灯 刺我眼睛",
+   "start": 138.55,
+   "end": 139.76,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 53,
+   "beat_in_bar": 2.25,
+   "type": "lyric",
+   "char_times": [
+    138.55,
+    138.73,
+    138.85,
+    139.03,
+    139.21,
+    139.39,
+    139.51
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "拍卖锤响 全场安静",
+   "start": 139.81,
+   "end": 141.08,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 53,
+   "beat_in_bar": 4.16,
+   "type": "lyric",
+   "char_times": [
+    139.81,
+    139.99,
+    140.17,
+    140.29,
+    140.41,
+    140.59,
+    140.77,
+    140.89
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "八千万 买我一命",
+   "start": 141.13,
+   "end": 142.28,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 54,
+   "beat_in_bar": 2.16,
+   "type": "lyric",
+   "char_times": [
+    141.13,
+    141.31,
+    141.49,
+    141.73,
+    141.85,
+    142.03,
+    142.15
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "印上帆布包 手机屏",
+   "start": 142.33,
+   "end": 143.67,
+   "matched": 0.38,
+   "confidence": "low (interpolated)",
+   "bar": 54,
+   "beat_in_bar": 3.98,
+   "type": "lyric",
+   "char_times": [
+    142.33,
+    142.51,
+    142.69,
+    142.87,
+    143.05,
+    143.22,
+    143.39,
+    143.55
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "九块九包邮 还要好评",
+   "start": 143.72,
+   "end": 145.1,
+   "matched": 0.56,
+   "confidence": "medium",
+   "bar": 55,
+   "beat_in_bar": 2.09,
+   "type": "lyric",
+   "char_times": [
+    143.72,
+    143.89,
+    144.01,
+    144.13,
+    144.25,
+    144.37,
+    144.55,
+    144.73,
+    144.85
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "可你隔着玻璃 看清",
+   "start": 145.15,
+   "end": 146.42,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 55,
+   "beat_in_bar": 4.26,
+   "type": "lyric",
+   "char_times": [
+    145.15,
+    145.21,
+    145.39,
+    145.51,
+    145.69,
+    145.81,
+    145.99,
+    146.17
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "那不是风景",
+   "start": 146.47,
+   "end": 147.44,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 56,
+   "beat_in_bar": 2.26,
+   "type": "lyric",
+   "char_times": [
+    146.47,
+    146.65,
+    146.77,
+    146.95,
+    147.19
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "是一个人 拼了命",
+   "start": 147.49,
+   "end": 150.4,
+   "matched": 0.86,
+   "confidence": "high",
+   "bar": 56,
+   "beat_in_bar": 3.81,
+   "type": "lyric",
+   "char_times": [
+    147.49,
+    147.73,
+    147.91,
+    148.09,
+    148.33,
+    148.51,
+    148.69
+   ]
+  },
+  {
+   "section": "Outro",
+   "text": "想被看见的 心",
+   "start": 150.45,
+   "end": 153.89,
+   "matched": 0.67,
+   "confidence": "medium",
+   "bar": 57,
+   "beat_in_bar": 4.29,
+   "type": "lyric",
+   "char_times": [
+    150.45,
+    150.75,
+    150.99,
+    151.23,
+    152.39,
+    153.54
+   ]
+  },
+  {
+   "section": "Ending",
+   "text": "亲爱的提奥 今晚的星星 还是很亮",
+   "start": 154.7,
+   "end": 161.6,
+   "matched": 1.0,
+   "confidence": "high",
+   "bar": 59,
+   "beat_in_bar": 2.74,
+   "type": "lyric",
+   "char_times": [
+    154.7,
+    154.88,
+    155.06,
+    155.24,
+    155.54,
+    157.65,
+    157.83,
+    158.01,
+    158.19,
+    158.43,
+    160.11,
+    160.35,
+    160.53,
+    160.77
+   ]
+  },
+  {
+   "section": "Reprise",
+   "text": "亲爱的提奥 今晚的星星 比白天还亮",
+   "start": 190.32,
+   "end": 198.0,
+   "matched": 0.73,
+   "confidence": "high",
+   "bar": 72,
+   "beat_in_bar": 4.75,
+   "type": "lyric",
+   "char_times": [
+    190.32,
+    190.5,
+    190.68,
+    190.86,
+    192.27,
+    193.68,
+    193.8,
+    194.04,
+    194.22,
+    194.46,
+    195.44,
+    196.42,
+    196.66,
+    196.91,
+    197.16
+   ]
+  }
+ ],
+ "beat_grid": {
+  "bpm": 90.98,
+  "beat_sec": 0.6595,
+  "bar_sec": 2.6379,
+  "first_beat_sec": 0.549,
+  "beats_per_bar": 4,
+  "bar1_downbeat_sec": 0.549,
+  "drift_ms": "<= ±11 (0:10–2:50)",
+  "notes": "说唱段（主歌 1、主歌 2、加速段）每句占 2 拍，从反拍起唱；副歌每句 1 小节；2:44 器乐高潮是双倍速感（约 182 BPM）"
+ }
+}

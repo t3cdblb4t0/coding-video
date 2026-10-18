@@ -1,0 +1,6 @@
+assets/fonts/*.ttf
+out/stills/
+out/*.h264
+out/*.json
+node_modules/
+__pycache__/
