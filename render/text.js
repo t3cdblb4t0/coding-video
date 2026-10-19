@@ -106,6 +106,29 @@ export class TextLayer {
     }
   }
 
+  // opening caption: who Theo is. Small museum-label text on the dark desk below the letter.
+  // Deliberately says nothing about his death, so the 1:25 line "提奥 只多撑了半年" still lands.
+  drawTheo(t) {
+    const { ctx, W, H } = this;
+    const lines = [
+      { s: '提奥 · 梵高（Theo van Gogh）', size: 32, color: 'rgb(236,206,142)', t0: 1.0, y: 0.874, sp: '4px' },
+      { s: '文森特的弟弟，在巴黎做画商。', size: 27, color: CREAM, t0: 2.0, y: 0.911, sp: '1px' },
+      { s: '十年间，他按月寄钱、寄颜料，供哥哥画画；文森特写给他的信，留存至今的有六百多封。', size: 27, color: CREAM, t0: 2.8, y: 0.945, sp: '1px' },
+    ];
+    const out = Math.min(1, Math.max(0, (t - 9.8) / 0.6));
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    for (const l of lines) {
+      const p = Math.min(1, Math.max(0, (t - l.t0) / 0.7)), e = 1 - (1 - p) * (1 - p), a = e * (1 - out);
+      if (a <= 0.003) continue;
+      ctx.globalAlpha = a * (l.size > 30 ? 0.92 : 0.84);
+      ctx.font = `${l.size}px LXGW`; ctx.letterSpacing = l.sp;
+      ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 2;
+      ctx.fillStyle = l.color;
+      ctx.fillText(l.s, W / 2, H * l.y + (1 - e) * 10 - out * 8);
+    }
+    ctx.restore();
+  }
+
   drawYear(y) {
     const { ctx } = this, x = 92, by = 96;
     const show = (txt, place, a, dy) => {
@@ -171,6 +194,7 @@ export class TextLayer {
   render(t, info, cam, letterAlpha) {
     this.ctx.clearRect(0, 0, this.W, this.H);
     this.drawLetter(t, cam, letterAlpha);
+    if (info.theo !== null) this.drawTheo(info.theo);
     this.drawYear(info.year);
     if (info.signatures !== null) this.drawSignatures(info.signatures);
     this.drawLyrics(t);

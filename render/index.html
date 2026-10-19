@@ -44,6 +44,18 @@ window.api = {
     const chunks = out; out = []; return { chunks, decoderConfig };
   },
   async finish() { await encoder.flush(); const chunks = out; out = []; encoder.close(); return { chunks, decoderConfig }; },
+  // lossless path: render global frames [f0, f1) and POST the raw RGBA pixels (bottom-up rows) to the local sink,
+  // which pipes them into ffmpeg/x264. One compression step only.
+  async rawFrames(f0, f1, url) {
+    const gl = canvas.getContext('webgl2'), buf = new Uint8Array(canvas.width * canvas.height * 4);
+    for (let f = f0; f < f1; f++) {
+      renderFrame(f / FPS);
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      const r = await fetch(url, { method: 'POST', body: new Blob([buf]) });   // Blob body: ~20 ms vs ~800 ms for a raw ArrayBuffer
+      if (!r.ok) throw new Error(`sink returned ${r.status}`);
+    }
+  },
 };
 window.__ready = true;
 </script>
