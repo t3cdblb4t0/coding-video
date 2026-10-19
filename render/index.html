@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>梵高 · renderer</title>
+<style>html,body{margin:0;background:#000}canvas{width:960px;height:540px;display:block}</style></head>
+<body>
+<canvas id="c"></canvas>
+<script type="module">
+import { init, renderFrame, warmup, saveState, loadState } from './main.js';
+
+const canvas = document.getElementById('c');
+let FPS = 24, encoder = null, out = [], decoderConfig = null, chunkStart = 0;
+const b64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+
+window.api = {
+  async init() { const info = await init(canvas); FPS = info.fps; return info; },
+  still(t) { warmup(t); renderFrame(t); return canvas.toDataURL('image/png'); },
+  warm(t) { warmup(t); },
+  saveState, loadState,
+  async startEncoder({ bitrate, f0 }) {
+    out = []; decoderConfig = null; chunkStart = f0;
+    encoder = new VideoEncoder({
+      output: (chunk, meta) => {
+        if (meta && meta.decoderConfig && meta.decoderConfig.description && !decoderConfig)
+          decoderConfig = { codec: meta.decoderConfig.codec, description: b64(new Uint8Array(meta.decoderConfig.description)) };
+        const buf = new Uint8Array(chunk.byteLength); chunk.copyTo(buf);
+        out.push({ key: chunk.type === 'key', data: b64(buf) });
+      },
+      error: (e) => { window.__encErr = String(e); },
+    });
+    encoder.configure({ codec: 'avc1.640028', width: canvas.width, height: canvas.height, bitrate, framerate: FPS,
+      avc: { format: 'avc' }, latencyMode: 'quality', bitrateMode: 'variable' });
+  },
+  // render + encode global frames [f0, f1)
+  async encodeFrames(f0, f1) {
+    for (let f = f0; f < f1; f++) {
+      renderFrame(f / FPS);
+      const i = f - chunkStart;
+      const vf = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+      encoder.encode(vf, { keyFrame: i % (2 * FPS) === 0 });
+      vf.close();
+      while (encoder.encodeQueueSize > 4) await new Promise((r) => setTimeout(r, 2));
+    }
+    if (window.__encErr) throw new Error(window.__encErr);
+    const chunks = out; out = []; return { chunks, decoderConfig };
+  },
+  async finish() { await encoder.flush(); const chunks = out; out = []; encoder.close(); return { chunks, decoderConfig }; },
+  // lossless path: render global frames [f0, f1) and POST the raw RGBA pixels (bottom-up rows) to the local sink,
+  // which pipes them into ffmpeg/x264. One compression step only.
+  async rawFrames(f0, f1, url) {
+    const gl = canvas.getContext('webgl2'), buf = new Uint8Array(canvas.width * canvas.height * 4);
+    for (let f = f0; f < f1; f++) {
+      renderFrame(f / FPS);
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      const r = await fetch(url, { method: 'POST', body: new Blob([buf]) });   // Blob body: ~20 ms vs ~800 ms for a raw ArrayBuffer
+      if (!r.ok) throw new Error(`sink returned ${r.status}`);
+    }
+  },
+};
+window.__ready = true;
+</script>
+</body>
+</html>

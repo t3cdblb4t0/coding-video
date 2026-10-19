@@ -1,0 +1,58 @@
+# Renders the whole MV in high quality on a GitHub runner and publishes it as a Release
+# (the HQ file is far over GitHub's 100 MB per-file git limit; Release assets may be up to 2 GB).
+name: Build MV
+on:
+  workflow_dispatch:
+    inputs:
+      crf:
+        description: 'x264 CRF (lower = better quality, bigger file). 22 ≈ 460 MB'
+        default: '22'
+  push:
+    paths: ['render/**', 'data/**', 'tools/**', '.github/workflows/build-mv.yml']
+permissions:
+  contents: write
+concurrency:
+  group: build-mv-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      CHROME: /usr/bin/google-chrome
+      CRF: ${{ inputs.crf || '22' }}
+      OUT: out/van-gogh-mv-1080p.mp4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffmpeg (libx264), font and playwright-core
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          ffmpeg -hide_banner -encoders | grep -q libx264
+          sh tools/fetch_font.sh
+          npm install --no-save --no-package-lock --silent playwright-core@1
+      - name: Render and encode (lossless frames -> x264, original AAC copied)
+        run: node tools/build_mv.js --crf "$CRF" --jobs 3 --out "$OUT" --preview-mbps 3.6
+      - name: Verify (decode frames from the MP4, audio offset vs the source song)
+        run: |
+          node tools/check_clip.js "$OUT" 4.6 9.7 14.4 27.5 43.4 57.9 67.9 85.0 103.9 133.6 144.4 148.9 170.0 197.7 | tee check.json
+          node -e "const r=JSON.parse(require('fs').readFileSync('check.json','utf8').trim().split('\n').pop());
+            if(r.framesDecoded!==r.requested||r.frames!==4758||Math.abs(r.audioOffsetErrorMs)>1||r.audioCorr<0.999){console.error('verification failed',r);process.exit(1)}"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="mv-${GITHUB_REF_NAME//\//-}"
+          HQ=$(du -m "$OUT" | cut -f1); PV=$(du -m "${OUT%.mp4}_preview.mp4" | cut -f1)
+          cat > notes.md <<EOF
+          《梵高》MV，画面全部由代码生成；音频是原曲 AAC，未重新编码。
+
+          | 文件 | 说明 | 大小 |
+          |---|---|---|
+          | \`van-gogh-mv-1080p.mp4\` | 高画质版：1920×1080，24 fps，x264 CRF ${CRF} | ${HQ} MB |
+          | \`van-gogh-mv-1080p_preview.mp4\` | 预览版：由高画质版压缩到约 3.6 Mbps | ${PV} MB |
+
+          构建于 commit ${GITHUB_SHA::7}（分支 \`${GITHUB_REF_NAME}\`），已检查：4758 帧完整解码，音频与原曲偏移 0 ms。
+          EOF
+          gh release delete "$TAG" --cleanup-tag -y 2>/dev/null || true
+          gh release create "$TAG" "$OUT" "${OUT%.mp4}_preview.mp4" "${OUT%.mp4}_preview.jpg" \
+            --target "$GITHUB_SHA" --title "《梵高》MV · 1080p（${GITHUB_REF_NAME}）" --notes-file notes.md --latest
