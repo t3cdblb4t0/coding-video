@@ -115,7 +115,7 @@ export function renderFrame(t, dt = 1 / FPS) {
   }
   // 5) text (letter handwriting is visible while the letter scene is)
   const ss = sceneState(t), letterA = (ss.b === SC.LETTER ? ss.mix : 0) + (ss.a === SC.LETTER && ss.b !== SC.LETTER ? 1 - ss.mix : 0);
-  const tc = textLayer.render(t, TL.textAt(t), cam, letterA);
+  const tc = textEnabled ? textLayer.render(t, TL.textAt(t), cam, letterA) : (textLayer.ctx.clearRect(0, 0, W, H), textLayer.canvas);
   gl.bindTexture(gl.TEXTURE_2D, textTex);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, tc);
@@ -166,6 +166,9 @@ export async function init(canvas) {
   return { W, H, fps: FPS };
 }
 
+// clean plates (no lyrics / year counter), e.g. for cover images
+let textEnabled = true;
+export function setTextEnabled(on) { textEnabled = !!on; }
 // warm the stroke population up so the first frame already looks painted
 export function warmup(t, frames = 20) { prevCam = null; prevKey = null; for (let k = frames; k > 0; k--) renderFrame(t - k / FPS); }
 
