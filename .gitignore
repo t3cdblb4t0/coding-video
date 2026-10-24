@@ -1,0 +1,3 @@
+# Preview stills and inspection sheets are regenerated on demand.
+previews/
+node_modules/
