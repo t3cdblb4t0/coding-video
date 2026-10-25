@@ -55,11 +55,14 @@ async function pickH264(width, height, fps, bitrate) {
   throw new Error('no supported H.264 encoder configuration');
 }
 
-async function renderAudio(scene) {
+async function renderAudio(scene, log = () => {}) {
   const length = Math.ceil(scene.duration * AUDIO_RATE);
   const octx = new OfflineAudioContext(2, length, AUDIO_RATE);
+  const t0 = performance.now();
   await scene.audio(octx, { duration: scene.duration });
+  log(`audio graph built in ${((performance.now() - t0) / 1000).toFixed(1)} s; rendering ${scene.duration} s of sound`);
   const buffer = await octx.startRendering();
+  log(`audio rendered in ${((performance.now() - t0) / 1000).toFixed(1)} s`);
   const chans = [buffer.getChannelData(0), buffer.getChannelData(1)];
 
   let peak = 0;
@@ -206,7 +209,7 @@ window.runJob = async function runJob(job) {
     return { files, sheet: sheetName };
   }
 
-  const audio = scene.audio ? await renderAudio(scene) : null;
+  const audio = scene.audio ? await renderAudio(scene, log) : null;
   if (audio) log(`audio ${JSON.stringify(audio.info)}`);
   const video = await renderVideo(scene, canvas, ctx, log);
   const mp4 = muxMP4(audio ? [video.track, audio.track] : [video.track]);
