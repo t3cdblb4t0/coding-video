@@ -54,9 +54,10 @@ try {
         });
 
       // Cut detection on small grayscale thumbnails.
+      const landscape = v.videoWidth > v.videoHeight;
       const tiny = document.createElement('canvas');
-      tiny.width = 36;
-      tiny.height = 64;
+      tiny.width = landscape ? 64 : 36;
+      tiny.height = landscape ? 36 : 64;
       const tctx = tiny.getContext('2d', { willReadFrequently: true });
       const diffs = [];
       let prev = null;
@@ -82,7 +83,7 @@ try {
       // Contact sheets, 4 x 4 per page, cells labelled with timestamps.
       const times = [];
       for (let t = 0; t < v.duration; t += every) times.push(+t.toFixed(2));
-      const cellW = 270;
+      const cellW = landscape ? 420 : 270;
       const cellH = Math.round((cellW * v.videoHeight) / v.videoWidth);
       const perPage = 16;
       const full = document.createElement('canvas');
