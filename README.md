@@ -12,6 +12,9 @@
 | 02 | 三门问题：换，还是不换？ | [002-三门问题.mp4](output/002-三门问题.mp4) | 横屏 16:9 | 2 分 12 秒 | 无音轨，后期自己配乐 |
 | 03 | 你们班有没有两个人同一天生日？ | [003-生日问题.mp4](output/003-生日问题.mp4) | 横屏 16:9 | 1 分 17 秒 | 无音轨，后期自己配乐 |
 | 04 | 喝醉的人能回家，鸟却可能永远迷路 | [004-随机游走.mp4](output/004-随机游走.mp4) | 横屏 16:9 | 1 分 41 秒 | 无音轨，后期自己配乐 |
+| 04 | 同上 · **抖音竖版** | [004-随机游走-抖音竖版.mp4](output/004-随机游走-抖音竖版.mp4) | 竖屏 9:16 | 1 分 41 秒 | 无音轨，和横版同一节拍 |
+
+**数据和发布文案**：每期发布后的后台数据、判断和下一期的改法记在 [运营/数据复盘.md](运营/数据复盘.md)，里面也有第 04 期的抖音标题、话题和置顶评论。
 
 每期的分镜、片中用到的事实和实测结果都在 `videos/<期>/分镜.md`：[第 01 期](videos/001-buffon-needle/分镜.md) · [第 02 期](videos/002-monty-hall/分镜.md) · [第 03 期](videos/003-birthday/分镜.md) · [第 04 期](videos/004-random-walk/分镜.md)。
 
@@ -60,6 +63,8 @@
 node engine/render.mjs videos/002-monty-hall                          # 渲染成片到 output/（约 1.5 分钟）
 node engine/render.mjs videos/002-monty-hall --preview 0,5,12.5       # 指定时刻的静帧 + 拼图，输出到 previews/
 node engine/render.mjs videos/004-random-walk --cover                 # 导出 16:9 / 4:3 / 3:4 三张封面（场景需实现 cover()）
+node engine/render.mjs videos/004-random-walk-vertical                # 抖音竖版（包装 16:9 场景：上标题、中画面、下大字幕）
+node engine/caption-check.mjs videos/004-random-walk-vertical         # 用真实字体打印竖版每条字幕的字号和换行
 node engine/inspect.mjs output/xxx.mp4 --every 1 [--frames]           # 抽帧拼图、镜头切换、音量、BPM（横竖屏都行）
 node engine/audio-bench.mjs videos/001-buffon-needle 10,30            # 测配乐渲染耗时
 ```

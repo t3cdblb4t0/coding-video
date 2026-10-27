@@ -34,15 +34,12 @@ export function drawBadge(ctx, episode, alpha = 1) {
 }
 
 // Top-right: 问 — 算 — 想, current act highlighted; `u` in [0, 1] is progress within the act.
-export function drawActs(ctx, act, u = 0, alpha = 1) {
+export function drawActs(ctx, act, u = 0, alpha = 1, { x0 = 1560, y = 64, gap = 120 } = {}) {
   if (alpha <= 0 || act < 0) return;
   ctx.save();
   ctx.globalAlpha *= alpha;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
-  const x0 = 1560;
-  const gap = 120;
-  const y = 64;
   ctx.lineWidth = 3;
   for (let k = 0; k < ACTS.length - 1; k++) {
     const xa = x0 + k * gap + 26;
@@ -111,7 +108,7 @@ export function drawSimTag(ctx, t, t0, t1, label, x, y) {
 
 // Series cover, any aspect ratio. art(ctx, w, h) paints a full-bleed picture; the title block goes
 // on the left (landscape) or top (portrait) over a dark gradient. title: array of rich-text lines.
-export function drawCover(ctx, w, h, { episode, title, tagline, art, bg = ['#141C30', '#06080F'] }) {
+export function drawCover(ctx, w, h, { episode, title, tagline, art, bg = ['#141C30', '#06080F'], badge = true }) {
   const landscape = w > h;
   const g0 = ctx.createRadialGradient(w * 0.6, h * 0.5, 40, w * 0.6, h * 0.5, Math.max(w, h) * 0.8);
   g0.addColorStop(0, bg[0]);
@@ -132,19 +129,21 @@ export function drawCover(ctx, w, h, { episode, title, tagline, art, bg = ['#141
   let y = (landscape ? h * 0.3 : 170 * unit);
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
-  ctx.fillStyle = BRAND.amber;
-  ctx.beginPath();
-  ctx.roundRect(x, y - 40 * unit, 10 * unit, 46 * unit, 5 * unit);
-  ctx.fill();
-  ctx.font = `700 ${Math.round(40 * unit)}px ${SANS}`;
-  ctx.letterSpacing = `${Math.round(6 * unit)}px`;
-  ctx.fillStyle = BRAND.text;
-  ctx.fillText('算给你看', x + 28 * unit, y);
-  const kw = ctx.measureText('算给你看').width;
-  ctx.letterSpacing = '0px';
-  ctx.font = `600 ${Math.round(38 * unit)}px ${MONO}`;
-  ctx.fillStyle = BRAND.amber;
-  ctx.fillText(String(episode).padStart(2, '0'), x + 28 * unit + kw + 18 * unit, y);
+  if (badge) {
+    ctx.fillStyle = BRAND.amber;
+    ctx.beginPath();
+    ctx.roundRect(x, y - 40 * unit, 10 * unit, 46 * unit, 5 * unit);
+    ctx.fill();
+    ctx.font = `700 ${Math.round(40 * unit)}px ${SANS}`;
+    ctx.letterSpacing = `${Math.round(6 * unit)}px`;
+    ctx.fillStyle = BRAND.text;
+    ctx.fillText('算给你看', x + 28 * unit, y);
+    const kw = ctx.measureText('算给你看').width;
+    ctx.letterSpacing = '0px';
+    ctx.font = `600 ${Math.round(38 * unit)}px ${MONO}`;
+    ctx.fillStyle = BRAND.amber;
+    ctx.fillText(String(episode).padStart(2, '0'), x + 28 * unit + kw + 18 * unit, y);
+  }
   y += 60 * unit;
   const maxW = (landscape ? w * 0.56 : w - 2 * x);
   let size = Math.round((landscape ? 118 : 124) * unit);
@@ -164,6 +163,7 @@ export function drawCover(ctx, w, h, { episode, title, tagline, art, bg = ['#141
     ctx.font = `600 ${Math.round(40 * unit)}px ${SANS}`;
     drawRich(ctx, tagline, x, y, { align: 'left', color: BRAND.dim });
   }
+  return { x, y, unit }; // left edge and last baseline, so callers can stack more below
 }
 
 // 「算完了，想一想」: a warm paper page with serif type. lines: [{ text: rich, at: seconds }], plus an

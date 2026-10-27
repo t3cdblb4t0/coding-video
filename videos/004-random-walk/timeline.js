@@ -44,7 +44,7 @@ export function buildCaptions(s) {
   const amber = (x) => [x, C.amber];
   const f = (n) => n.toLocaleString('en-US');
   return [
-    { t0: 2.6, t1: 4.7, zh: '每个路口都随便拐，他还能走回家吗？', en: 'He turns at random at every corner. Will he ever get home?' },
+    { t0: 3.0, t1: 4.7, zh: '这事，要从 1921 年一位数学家的散步说起', en: "It all starts with a mathematician's walk in 1921" },
     { t0: 5.0, t1: 8.6, zh: '数学家波利亚在苏黎世散步时，总撞见同一对情侣', en: 'Out walking in Zürich, the mathematician George Pólya kept running into the same couple' },
     { t0: 8.7, t1: 12.1, zh: '他想：大家都是随便走，为什么老能碰上？', en: 'Everyone was wandering at random. So why did they keep meeting?' },
     { t0: 12.2, t1: 16.5, zh: [['1921 年，他写了一篇论文：'], amber('《街道网中的随机漫步》')], en: 'In 1921 he wrote it up: "Random walks in a street network"' },

@@ -7,7 +7,12 @@ import { drawHouse, drawBird } from './style.js';
 import { W, H, C, SANS, makeCanvas } from './style.js';
 import { T, buildCaptions } from './timeline.js';
 import { walkHome, walkUntilHome, walkers, waitingTimes, SEEDS } from './sim.js';
-import { setupHook, drawHook } from './hook.js';
+import { setupHook, drawHook, drawWalkArt, HOOK_TITLE, HOOK_TAGLINE } from './hook.js';
+
+// Wrappers (e.g. the 抖音竖版 in videos/004-random-walk-vertical) can turn these off and draw
+// their own, larger captions outside the 16:9 picture.
+export const OPTS = { captions: true, chrome: true };
+export const getCaptions = () => st.captions;
 import { setupStory, drawStory } from './story.js';
 import { drawRules } from './rules.js';
 import { setupDims, drawDims } from './dims.js';
@@ -39,7 +44,7 @@ function buildBackground() {
 }
 
 // Which act (0 问 / 1 算 / 2 想) and how far through it, for the progress bar.
-function actAt(t) {
+export function actAt(t) {
   const acts = [[T.hook, T.d1], [T.d1, T.think], [T.think, T.end]];
   for (let k = 0; k < acts.length; k++) {
     const [a, b] = acts[k];
@@ -57,7 +62,7 @@ export default {
   bitrate: 7e6,
 
   setup() {
-    st.hookWalk = walkHome(SEEDS.hook, 400);
+    st.hookWalk = walkHome(SEEDS.hook, 520);
     const journey = walkUntilHome(SEEDS.hook); // ~42.6 M steps, about a second
     st.home = journey.home;
     st.far = journey.far;
@@ -85,49 +90,9 @@ export default {
     );
   },
 
-  // Cover image (any aspect): the real hook walk on a night grid, plus a lost bird.
+  // Cover image (any aspect): same composition and words as the first frame of the video.
   cover(ctx, { w, h }) {
-    const landscape = w > h;
-    drawCover(ctx, w, h, {
-      episode: EPISODE,
-      title: [[['喝醉的人能回家，']], [['鸟却可能'], ['永远迷路', C.amber]]],
-      tagline: [['真实模拟 1 万次', 'rgba(244,246,250,0.62)'], ['  ·  ', 'rgba(244,246,250,0.36)'], ['算完了，想一想', C.amber]],
-      art: (g) => {
-        const cell = Math.min(w, h) / 30;
-        const ox = landscape ? w * 0.72 : w * 0.5;
-        const oy = landscape ? h * 0.56 : h * 0.72;
-        g.strokeStyle = C.street;
-        g.lineWidth = 2;
-        g.beginPath();
-        for (let x = ox % cell; x <= w; x += cell) {
-          g.moveTo(x, 0);
-          g.lineTo(x, h);
-        }
-        for (let y = oy % cell; y <= h; y += cell) {
-          g.moveTo(0, y);
-          g.lineTo(w, y);
-        }
-        g.stroke();
-        const { xs, ys } = st.hookWalk;
-        g.strokeStyle = C.amber;
-        g.lineWidth = Math.max(3, cell * 0.14);
-        g.lineCap = 'round';
-        g.lineJoin = 'round';
-        g.shadowColor = C.amber;
-        g.shadowBlur = 14;
-        g.beginPath();
-        for (let k = 0; k <= 340; k++) {
-          const X = ox + xs[k] * cell;
-          const Y = oy - ys[k] * cell;
-          if (k === 0) g.moveTo(X, Y);
-          else g.lineTo(X, Y);
-        }
-        g.stroke();
-        g.shadowBlur = 0;
-        drawHouse(g, ox, oy, cell * 1.3, C.home, 1, 1);
-        drawBird(g, landscape ? w * 0.86 : w * 0.82, landscape ? h * 0.2 : h * 0.47, cell * 1.8, C.violet, 0.8, 1);
-      },
-    });
+    drawCover(ctx, w, h, { episode: EPISODE, title: HOOK_TITLE, tagline: HOOK_TAGLINE, art: (g) => drawWalkArt(g, w, h, { steps: 340 }) });
   },
 
   draw(ctx, t) {
@@ -144,13 +109,17 @@ export default {
     drawWhy(ctx, t);
     drawThink(ctx, t);
     drawOutro(ctx, t);
-    // Series chrome: badge + 问→算→想 progress (hidden on the very first beat so the hook is clean).
-    const chrome = prog(t, 0.6, 0.5);
-    drawBadge(ctx, EPISODE, chrome);
-    const [act, u] = actAt(t);
-    drawActs(ctx, act, u, chrome * (1 - prog(t, T.outro, 0.4)));
-    for (const cap of st.captions) {
-      drawCaption(ctx, t, cap, { x: W / 2, yZh: 980, yEn: cap.zh ? 1028 : 1000, family: SANS, zhSize: 58, enSize: cap.zh ? 32 : 36, maxWidth: 1640, dim: C.dim });
+    // Series chrome: badge + 问→算→想 progress. The hook carries its own badge, so start after it.
+    if (OPTS.chrome) {
+      const chrome = prog(t, T.story, 0.5);
+      drawBadge(ctx, EPISODE, chrome);
+      const [act, u] = actAt(t);
+      drawActs(ctx, act, u, chrome * (1 - prog(t, T.outro, 0.4)));
+    }
+    if (OPTS.captions) {
+      for (const cap of st.captions) {
+        drawCaption(ctx, t, cap, { x: W / 2, yZh: 980, yEn: cap.zh ? 1028 : 1000, family: SANS, zhSize: 58, enSize: cap.zh ? 32 : 36, maxWidth: 1640, dim: C.dim });
+      }
     }
     const fade = prog(t, T.end - 0.6, 0.6);
     if (fade > 0) {

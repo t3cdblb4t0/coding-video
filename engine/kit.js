@@ -102,3 +102,76 @@ export function drawCaption(ctx, t, cap, { x, yZh, yEn, family, zhSize = 54, enS
 }
 
 export const fmtInt = (n) => Math.round(n).toLocaleString('en-US');
+
+// Wrap rich text into lines no wider than maxWidth (uses the current ctx.font).
+// Breaks are allowed after spaces, after CJK ideographs and after CJK punctuation, but never
+// right before closing punctuation, so Chinese wraps anywhere and English wraps at spaces.
+const CLOSING = '，。、：；？！）」』》%,.;:?!)';
+const isCJK = (ch) => /[\u3400-\u9fff\u3000-\u303f\uff00-\uffef]/.test(ch);
+// Preferred break points. Spaces are deliberately not in here: in Chinese captions they only pad
+// numbers ("1 万"), so they are allowed breaks but get no bonus.
+const PUNCT = '，。：；？！、,.;:?!';
+export function wrapRich(ctx, s, maxWidth) {
+  const chars = [];
+  for (const [txt, c] of segs(s)) for (const ch of txt) chars.push([ch, c]);
+  const N = chars.length;
+  const w = chars.map(([ch]) => ctx.measureText(ch).width);
+  const total = w.reduce((a, b) => a + b, 0);
+  // A space next to a digit only pads a number in Chinese text ("直线 77 次"), so it is not a
+  // break point: this keeps numbers attached to their units.
+  const isDigit = (k) => k >= 0 && k < N && /[0-9.%]/.test(chars[k][0]);
+  const canBreakAfter = (k) => {
+    if (k >= N - 1 || CLOSING.includes(chars[k + 1][0])) return false;
+    if (chars[k][0] === ' ') return !isDigit(k - 1) && !isDigit(k + 1);
+    return isCJK(chars[k][0]);
+  };
+  const isPunct = (k) => PUNCT.includes(chars[k][0]);
+  // Rebuild [text, colour] segments for chars[from, to), trimming spaces at both ends.
+  const toSegs = (from, to) => {
+    while (from < to && chars[from][0] === ' ') from++;
+    while (to > from && chars[to - 1][0] === ' ') to--;
+    const out = [];
+    for (let k = from; k < to; k++) {
+      const [ch, c] = chars[k];
+      const last = out[out.length - 1];
+      if (last && last[1] === c) last[0] += ch;
+      else out.push([ch, c]);
+    }
+    return out;
+  };
+  if (total <= maxWidth) return [toSegs(0, N)];
+  // Two lines if possible: the most balanced split, with a bonus for breaking at punctuation.
+  let best = null;
+  let acc = 0;
+  for (let k = 0; k < N - 1; k++) {
+    acc += w[k];
+    if (!canBreakAfter(k) || acc > maxWidth || total - acc > maxWidth) continue;
+    const cost = Math.max(acc, total - acc) - (isPunct(k) ? 0.35 * maxWidth : 0);
+    if (!best || cost < best.cost) best = { k, cost };
+  }
+  if (best) return [toSegs(0, best.k + 1), toSegs(best.k + 1, N)];
+  // Otherwise greedy, preferring a punctuation break in the second half of each line.
+  const lines = [];
+  let start = 0;
+  let width = 0;
+  let lastBreak = -1;
+  let lastPunct = -1;
+  for (let k = 0; k < N; k++) {
+    if (k > start && width + w[k] > maxWidth) {
+      const half = start + (k - start) / 2;
+      const cut = lastPunct >= half ? lastPunct + 1 : lastBreak >= start ? lastBreak + 1 : k;
+      lines.push(toSegs(start, cut));
+      start = cut;
+      width = w.slice(start, k).reduce((a, b) => a + b, 0);
+      lastBreak = lastPunct = -1;
+      for (let j = start; j < k; j++) if (canBreakAfter(j)) (lastBreak = j), isPunct(j) && (lastPunct = j);
+    }
+    width += w[k];
+    if (canBreakAfter(k)) {
+      lastBreak = k;
+      if (isPunct(k)) lastPunct = k;
+    }
+  }
+  lines.push(toSegs(start, N));
+  return lines.filter((ln) => ln.length);
+}
