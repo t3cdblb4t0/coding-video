@@ -1,6 +1,7 @@
 // Render a scene to MP4, or render preview stills.
 //   node engine/render.mjs videos/001-buffon-needle
 //   node engine/render.mjs videos/001-buffon-needle --preview 0,2.5,10 [--scale 0.5]
+//   node engine/render.mjs videos/004-random-walk --cover   (16:9, 4:3, 3:4 cover JPGs, if the scene has cover())
 //   options: --out output/name.mp4   --no-silent (skip the extra copy without music)
 import path from 'node:path';
 import { ROOT, startServer, openPage, parseArgs } from './server.mjs';
@@ -22,9 +23,12 @@ try {
   await page.goto(`http://localhost:${port}/engine/page.html`);
   await page.waitForFunction(() => typeof window.runJob === 'function');
   const meta = await page.evaluate(async (u) => (await import(u)).default.meta ?? {}, sceneUrl);
-  const job = args.preview
-    ? { mode: 'preview', scene: sceneUrl, times: String(args.preview).split(',').map(Number), scale: Number(args.scale ?? 0.5), outDir: `previews/${id}` }
-    : { mode: 'render', scene: sceneUrl, out: args.out ?? `output/${meta.output ?? `${id}.mp4`}`, silentCopy: !args['no-silent'] };
+  const outName = meta.output ?? `${id}.mp4`;
+  const job = args.cover
+    ? { mode: 'cover', scene: sceneUrl, outBase: `output/${outName.replace(/\.mp4$/i, '')}` }
+    : args.preview
+      ? { mode: 'preview', scene: sceneUrl, times: String(args.preview).split(',').map(Number), scale: Number(args.scale ?? 0.5), outDir: `previews/${id}` }
+      : { mode: 'render', scene: sceneUrl, out: args.out ?? `output/${outName}`, silentCopy: !args['no-silent'] };
   const started = Date.now();
   const result = await page.evaluate((j) => window.runJob(j), job);
   console.log(JSON.stringify({ ...result, wallSeconds: (Date.now() - started) / 1000 }, null, 2));

@@ -209,6 +209,22 @@ window.runJob = async function runJob(job) {
     return { files, sheet: sheetName };
   }
 
+  if (job.mode === 'cover') {
+    if (!scene.cover) throw new Error('scene has no cover() export');
+    const files = [];
+    for (const [w, h, tag] of [[1920, 1080, '16x9'], [1440, 1080, '4x3'], [1080, 1440, '3x4']]) {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const cctx = c.getContext('2d');
+      await scene.cover(cctx, { w, h });
+      const name = `${job.outBase}-封面-${tag}.jpg`;
+      await post(name, await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.92)));
+      files.push(name);
+    }
+    return { covers: files };
+  }
+
   const audio = scene.audio ? await renderAudio(scene, log) : null;
   if (audio) log(`audio ${JSON.stringify(audio.info)}`);
   const video = await renderVideo(scene, canvas, ctx, log);
