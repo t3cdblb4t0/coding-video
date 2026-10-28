@@ -2,7 +2,9 @@
 //   node engine/render.mjs videos/001-buffon-needle
 //   node engine/render.mjs videos/001-buffon-needle --preview 0,2.5,10 [--scale 0.5]
 //   node engine/render.mjs videos/004-random-walk --cover   (16:9, 4:3, 3:4 cover JPGs, if the scene has cover())
+//   node engine/render.mjs videos/006-survivors --audio-only (just the sound track, as <output>-音效.wav)
 //   options: --out output/name.mp4   --no-silent (skip the extra copy without music)
+//            --wav (also write the sound track as a separate 16-bit WAV, for 剪映 and other editors)
 import path from 'node:path';
 import { ROOT, startServer, openPage, parseArgs } from './server.mjs';
 
@@ -24,11 +26,14 @@ try {
   await page.waitForFunction(() => typeof window.runJob === 'function');
   const meta = await page.evaluate(async (u) => (await import(u)).default.meta ?? {}, sceneUrl);
   const outName = meta.output ?? `${id}.mp4`;
+  const out = args.out ?? `output/${outName}`;
   const job = args.cover
     ? { mode: 'cover', scene: sceneUrl, outBase: `output/${outName.replace(/\.mp4$/i, '')}` }
     : args.preview
       ? { mode: 'preview', scene: sceneUrl, times: String(args.preview).split(',').map(Number), scale: Number(args.scale ?? 0.5), outDir: `previews/${id}` }
-      : { mode: 'render', scene: sceneUrl, out: args.out ?? `output/${outName}`, silentCopy: !args['no-silent'] };
+      : args['audio-only']
+        ? { mode: 'audio', scene: sceneUrl, out }
+        : { mode: 'render', scene: sceneUrl, out, silentCopy: !args['no-silent'], wav: !!args.wav };
   const started = Date.now();
   const result = await page.evaluate((j) => window.runJob(j), job);
   console.log(JSON.stringify({ ...result, wallSeconds: (Date.now() - started) / 1000 }, null, 2));

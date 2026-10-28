@@ -74,9 +74,13 @@ async function renderAudio(scene, log = () => {}) {
       sumSq += ch[i] * ch[i];
     }
   }
-  const gain = peak > 0 ? 10 ** (-1 / 20) / peak : 1; // normalise peak to -1 dBFS
+  // Normalise the peak to -1 dBFS, unless the scene fixes its own level (a sound-effects track meant
+  // to sit under the user's music must not be pushed up to full scale).
+  const target = scene.audioPeakDb ?? -1;
+  const gain = peak > 0 && scene.audioNormalize !== false ? 10 ** (target / 20) / peak : 1;
   for (const ch of chans) for (let i = 0; i < ch.length; i++) ch[i] *= gain;
   const rmsDb = 20 * Math.log10(Math.sqrt(sumSq / (2 * length)) * gain || 1e-9);
+  const wav = encodeWav(chans, AUDIO_RATE);
 
   const packets = [];
   let head = null;
@@ -110,7 +114,38 @@ async function renderAudio(scene, log = () => {}) {
   // OpusHead (little-endian): bytes 10-11 hold pre-skip. libopus' default lookahead is 312.
   const preSkip = head && head.length >= 19 ? head[10] | (head[11] << 8) : 312;
   const track = { kind: 'audio', timescale: AUDIO_RATE, channels: 2, preSkip, inputSampleRate: AUDIO_RATE, samples: packets };
-  return { track, info: { peakBeforeNorm: +peak.toFixed(3), rmsDb: +rmsDb.toFixed(1), preSkip, packets: packets.length, opusHead: !!head } };
+  return { track, wav, info: { peakBeforeNorm: +peak.toFixed(3), rmsDb: +rmsDb.toFixed(1), preSkip, packets: packets.length, opusHead: !!head } };
+}
+
+// 16-bit PCM WAV, interleaved stereo. Every editor imports this (剪映 included), unlike Opus-in-MP4.
+function encodeWav(chans, rate) {
+  const n = chans[0].length;
+  const nc = chans.length;
+  const buf = new ArrayBuffer(44 + n * nc * 2);
+  const v = new DataView(buf);
+  const str = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  str(0, 'RIFF');
+  v.setUint32(4, 36 + n * nc * 2, true);
+  str(8, 'WAVE');
+  str(12, 'fmt ');
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); // PCM
+  v.setUint16(22, nc, true);
+  v.setUint32(24, rate, true);
+  v.setUint32(28, rate * nc * 2, true);
+  v.setUint16(32, nc * 2, true);
+  v.setUint16(34, 16, true);
+  str(36, 'data');
+  v.setUint32(40, n * nc * 2, true);
+  let o = 44;
+  for (let i = 0; i < n; i++) {
+    for (let c = 0; c < nc; c++) {
+      const s = Math.max(-1, Math.min(1, chans[c][i]));
+      v.setInt16(o, Math.round(s < 0 ? s * 0x8000 : s * 0x7fff), true);
+      o += 2;
+    }
+  }
+  return new Uint8Array(buf);
 }
 
 async function renderVideo(scene, canvas, ctx, log) {
@@ -225,8 +260,22 @@ window.runJob = async function runJob(job) {
     return { covers: files };
   }
 
+  // Sound only: the WAV next to where the MP4 would go (fast, for checking the sound design).
+  if (job.mode === 'audio') {
+    if (!scene.audio) throw new Error('scene has no audio() export');
+    const audio = await renderAudio(scene, log);
+    const wavName = job.out.replace(/\.mp4$/i, '-音效.wav');
+    await post(wavName, audio.wav);
+    return { wav: wavName, bytes: audio.wav.length, audio: audio.info };
+  }
+
   const audio = scene.audio ? await renderAudio(scene, log) : null;
   if (audio) log(`audio ${JSON.stringify(audio.info)}`);
+  let wavName = null;
+  if (audio && job.wav) {
+    wavName = job.out.replace(/\.mp4$/i, '-音效.wav');
+    await post(wavName, audio.wav);
+  }
   const video = await renderVideo(scene, canvas, ctx, log);
   const mp4 = muxMP4(audio ? [video.track, audio.track] : [video.track]);
   await post(job.out, mp4);
@@ -235,5 +284,5 @@ window.runJob = async function runJob(job) {
     silent = job.out.replace(/\.mp4$/i, '-无声.mp4');
     await post(silent, muxMP4([video.track]));
   }
-  return { out: job.out, silent, bytes: mp4.length, video: video.info, audio: audio?.info ?? null };
+  return { out: job.out, silent, wav: wavName, bytes: mp4.length, video: video.info, audio: audio?.info ?? null };
 };

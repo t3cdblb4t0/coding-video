@@ -15,6 +15,10 @@
 | 04 | 同上 · **抖音竖版** | [004-随机游走-抖音竖版.mp4](output/004-随机游走-抖音竖版.mp4) | 竖屏 9:16 | 1 分 41 秒 | 无音轨，和横版同一节拍 |
 | 05 | 骂完就变好，是骂的功劳吗？（回归均值） | [005-回归均值.mp4](output/005-回归均值.mp4) | 横屏 16:9 | 2 分 10 秒 | 无音轨，后期自己配乐 |
 | 05 | 同上 · **抖音竖版** | [005-回归均值-抖音竖版.mp4](output/005-回归均值-抖音竖版.mp4) | 竖屏 9:16 | 2 分 10 秒 | 无音轨，和横版同一节拍 |
+| 06 | 弹孔（幸存者偏差）· **样片**，新做法 | [006-弹孔-样片.mp4](output/006-弹孔-样片.mp4) | 横屏 16:9 | 45.6 秒（开头） | **自带音效**；另有 [音效 WAV](output/006-弹孔-样片-音效.wav) |
+| 06 | 同上 · **抖音竖版样片** | [006-弹孔-样片-抖音竖版.mp4](output/006-弹孔-样片-抖音竖版.mp4) | 竖屏 9:16 | 45.6 秒 | 自带音效，和横版同一条 |
+
+**第 06 期起整体改版**：对照了这个赛道里爆款的逐帧拆解，开头、字幕、画面、声音都按爆款的做法改了，见 [运营/爆款拆解.md](运营/爆款拆解.md)。现在先给 45.6 秒样片，确认后再做全片（约 2 分 30 秒），分镜见 [第 06 期分镜](videos/006-survivors/分镜.md)。
 
 **数据和发布文案**：每期发布后的后台数据、判断和下一期的改法记在 [运营/数据复盘.md](运营/数据复盘.md)，里面也有每期的抖音标题、话题和置顶评论。
 
@@ -36,7 +40,12 @@
 
 **下载方法**：在 GitHub 上点开文件，再点右上角的下载按钮（Download raw file）。
 
-**配乐**：第 02 期起没有音轨，导入剪映后直接加音乐即可。各段落都从 100 BPM 的小节线开始（每 2.4 秒一小节），选 100 BPM 左右的曲子更容易卡点。
+**配乐**：第 02–05 期没有音轨，导入剪映后直接加音乐即可。各段落都从 100 BPM 的小节线开始（每 2.4 秒一小节），选 100 BPM 左右的曲子更容易卡点。
+
+**音效（第 06 期起）**：片子自带音效（飞机掠过、弹孔落下的"嗒"、片名的钟声）。在剪映电脑版里：
+1. 导入视频和 `-音效.wav`，WAV 拖到音频轨道的第 0 秒，和视频对齐（如果视频自带的声音能正常播放，也可以直接用视频里的，不用 WAV）。
+2. 音乐放另一条音频轨道，音量调低一些，让音效听得见。
+3. 可选：第 27.6–28.4 秒把音乐也压下去，答案前这 0.8 秒的静音最有冲击力。
 
 ## 发布前检查
 
@@ -50,11 +59,11 @@
 
 ## 下一条怎么做
 
-在 Kiro 里说「做第 6 期：幸存者偏差」（第 05 期片尾已预告"成功人士都在讲的经验，可能是幸存者的错觉"），有参考视频就一起传上来。流程：
+第 06 期样片看完后，在 Kiro 里说"样片可以，做全片"，或者说哪里要改。流程：
 
-1. Kiro 先写分镜（每段画面 + 字幕），你确认后再做
-2. Kiro 渲染并自检，然后推送到这个仓库
-3. 你下载、配乐、发布；48 小时后把播放量、完播率、点赞和涨粉数告诉 Kiro，用来调整下一条
+1. Kiro 先写分镜（每段画面 + 字幕），再做开头 30–45 秒的样片给你看
+2. 你确认后，Kiro 做全片、自检，然后推送到这个仓库
+3. 你下载、配乐、发布；4 小时和 24 小时各把后台数据告诉 Kiro（平均播放时长、2 秒跳出、5 秒完播、涨粉、收藏），用来调整下一条
 
 制作约定（画幅、音频、种子等）写在 [.kiro/steering/video-conventions.md](.kiro/steering/video-conventions.md)，Kiro 每次都会按它来做。
 
@@ -70,6 +79,9 @@ node engine/render.mjs videos/002-monty-hall --preview 0,5,12.5       # 指定�
 node engine/render.mjs videos/004-random-walk --cover                 # 导出 16:9 / 4:3 / 3:4 三张封面（场景需实现 cover()）
 node engine/render.mjs videos/004-random-walk-vertical                # 抖音竖版（包装 16:9 场景：上标题、中画面、下大字幕）
 node engine/caption-check.mjs videos/004-random-walk-vertical         # 用真实字体打印竖版每条字幕的字号和换行
+node engine/caption-density.mjs videos/006-survivors                  # 字幕密度：每分钟字数、每句字数、有字幕的时间占比
+node engine/render.mjs videos/006-survivors --no-silent --wav         # 带音效的 MP4 + 单独的 -音效.wav（给剪映）
+node engine/render.mjs videos/006-survivors --audio-only              # 只出音效 WAV（几秒），调声音时用
 node engine/inspect.mjs output/xxx.mp4 --every 1 [--frames]           # 抽帧拼图、镜头切换、音量、BPM（横竖屏都行）
 node engine/audio-bench.mjs videos/001-buffon-needle 10,30            # 测配乐渲染耗时
 ```
@@ -80,7 +92,9 @@ node engine/audio-bench.mjs videos/001-buffon-needle 10,30            # 测配�
 - 配乐的音频节点按 1 秒窗口逐段创建（`OfflineAudioContext.suspend/resume`），播完就断开。如果一次建好整张图，2 分钟的配乐要渲染 10 分钟以上；现在约 8 秒。
 - 版式：竖屏要避开抖音的界面遮挡（顶部 y < 220，右侧按钮栏 x > 930，底部文案区 y > 1520）；横屏的字幕放在 y ≈ 970，避开 B 站等播放器底部的进度条。
 - 系列组件在 `engine/brand.js`：`drawBadge`（台标）、`drawActs`（问→算→想 进度条）、`drawSimTag`（▶ 模拟标签）、`drawThinkCard`（想一想卡片）、`drawCover`（任意比例封面）。
+- 第 06 期起的画面语法在 `engine/film.js`：`developText`（逐字从模糊到清楚）、`drawFilmCaptions`、`drawTitleCard`、`drawFlash`、`makeDust/drawDust`、`drawChapter`（左上章节标 + 问算想）、`drawDenominator`（右上分母表）、`drawAnchor`（年份 · 地点 · 人物）。全部是时间 t 的纯函数，预览可以随便跳。
+- 音效工具在 `engine/sfx.js`（`createSfx`：tick、bell、whoosh、impact、riser、swell、bed、hum、typewriter、rain），音符按 1 秒窗口懒创建。`runtime.js` 可以另存 16-bit WAV（`--wav`、`--audio-only`），场景可用 `audioPeakDb` 设峰值（音效轨用 −3 dBFS）。
 - `drawRich`（`engine/kit.js`）会把 `ctx.textAlign` 改成 `'left'`。之后如果还要用 `fillText` 居中，先重新设成 `'center'`（第 05 期的对照组方框就因此整体偏右，箭头压住了数字）。
-- 字体在 `fonts/`，全部是 SIL OFL 1.1 授权，可免费商用：Noto Sans SC（思源黑体）、Noto Serif SC（思源宋体，用于"想一想"）、IM Fell French Canon（没有 π、≈ 等符号）、EB Garamond、Source Code Pro（等宽数字；**没有中文字形**，中文必须换回黑体，否则会显示成方框）。
+- 字体在 `fonts/`，全部是 SIL OFL 1.1 授权，可免费商用：Noto Sans SC（思源黑体）、Noto Serif SC（思源宋体，用于"想一想"和片名）、IM Fell French Canon（没有 π、≈ 等符号）、EB Garamond、Source Code Pro（等宽数字；**没有中文字形**，中文必须换回黑体，否则会显示成方框）、Courier Prime（打字机字体，只有西文，用于历史文件）。
 - 门、汽车、羊等图形全部用代码画，不用图片或 emoji，没有版权问题。
 - 随机种子事先定好，不为结果去挑。各期的种子和实测结果见对应的分镜.md。
