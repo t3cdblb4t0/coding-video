@@ -260,65 +260,86 @@ window.runJob = async function runJob(job) {
     return { covers: files };
   }
 
-  // Account avatar: scene.avatar(ctx, { w, h }) at 1080 x 1080 as PNG, plus a check sheet showing it
-  // the way Douyin does (a circle with a white ring) at profile, feed and comment sizes, on the dark
-  // feed and on a light page, with the red follow "+" over the feed-sized one.
+  // Account avatar(s): scene.avatar(ctx, { w, h }), or several options in scene.avatars
+  // ({ name: fn }), each at 1080 x 1080 as PNG. Plus a check sheet, one column per option, showing
+  // them the way Douyin does (a circle with a white ring): profile size and feed / comment sizes on
+  // the dark feed (with the red follow "+" over the feed-sized one), then on a light page.
   if (job.mode === 'avatar') {
-    if (!scene.avatar) throw new Error('scene has no avatar() export');
+    const list = scene.avatars ? Object.entries(scene.avatars) : scene.avatar ? [['', scene.avatar]] : null;
+    if (!list) throw new Error('scene has no avatar() or avatars export');
     const S = 1080;
-    const c = document.createElement('canvas');
-    c.width = S;
-    c.height = S;
-    await scene.avatar(c.getContext('2d', { alpha: false }), { w: S, h: S });
-    const png = `${job.outBase}-头像.png`;
-    await post(png, await new Promise((r) => c.toBlob(r, 'image/png')));
-    const sizes = [320, 96, 48, 36];
-    const pad = 44;
-    const rowH = sizes[0] + 2 * pad;
+    const done = [];
+    for (const [name, fn] of list) {
+      const c = document.createElement('canvas');
+      c.width = S;
+      c.height = S;
+      await fn(c.getContext('2d', { alpha: false }), { w: S, h: S });
+      const png = `${job.outBase}-头像${name ? `-${name}` : ''}.png`;
+      await post(png, await new Promise((r) => c.toBlob(r, 'image/png')));
+      done.push({ name, c, png });
+    }
+    const COL = 440;
+    const BIG = 360;
+    const top = done.some((d) => d.name) ? 64 : 24;
+    const darkH = top + BIG + 40 + 96 + 44;
     const sheet = document.createElement('canvas');
-    sheet.width = pad + sizes.reduce((s, d) => s + d + pad, 0);
-    sheet.height = 2 * rowH;
+    sheet.width = done.length * COL;
+    sheet.height = darkH + 96 + 64;
     const g = sheet.getContext('2d');
     g.imageSmoothingEnabled = true;
     g.imageSmoothingQuality = 'high';
-    [['#161823', '#FFFFFF'], ['#F4F4F6', '#FFFFFF']].forEach(([bg, ring], row) => {
-      g.fillStyle = bg;
-      g.fillRect(0, row * rowH, sheet.width, rowH);
-      let x = pad;
-      for (const d of sizes) {
-        const cx = x + d / 2;
-        const cy = row * rowH + rowH / 2;
-        g.save();
-        g.beginPath();
-        g.arc(cx, cy, d / 2, 0, Math.PI * 2);
-        g.clip();
-        g.drawImage(c, cx - d / 2, cy - d / 2, d, d);
-        g.restore();
-        g.strokeStyle = ring;
-        g.lineWidth = Math.max(1.5, d / 32);
-        g.beginPath();
-        g.arc(cx, cy, d / 2, 0, Math.PI * 2);
-        g.stroke();
-        if (row === 0 && d === sizes[1]) {
-          g.fillStyle = '#FE2C55';
-          g.beginPath();
-          g.arc(cx, cy + d / 2, d * 0.17, 0, Math.PI * 2);
-          g.fill();
-          g.strokeStyle = '#FFFFFF';
-          g.lineWidth = d * 0.035;
-          g.beginPath();
-          g.moveTo(cx - d * 0.08, cy + d / 2);
-          g.lineTo(cx + d * 0.08, cy + d / 2);
-          g.moveTo(cx, cy + d / 2 - d * 0.08);
-          g.lineTo(cx, cy + d / 2 + d * 0.08);
-          g.stroke();
-        }
-        x += d + pad;
+    g.fillStyle = '#161823';
+    g.fillRect(0, 0, sheet.width, darkH);
+    g.fillStyle = '#F4F4F6';
+    g.fillRect(0, darkH, sheet.width, sheet.height - darkH);
+    const circle = (img, cx, cy, d, plus = false) => {
+      g.save();
+      g.beginPath();
+      g.arc(cx, cy, d / 2, 0, Math.PI * 2);
+      g.clip();
+      g.drawImage(img, cx - d / 2, cy - d / 2, d, d);
+      g.restore();
+      g.strokeStyle = '#FFFFFF';
+      g.lineWidth = Math.max(1.5, d / 32);
+      g.beginPath();
+      g.arc(cx, cy, d / 2, 0, Math.PI * 2);
+      g.stroke();
+      if (!plus) return;
+      g.fillStyle = '#FE2C55';
+      g.beginPath();
+      g.arc(cx, cy + d / 2, d * 0.17, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = '#FFFFFF';
+      g.lineWidth = d * 0.035;
+      g.beginPath();
+      g.moveTo(cx - d * 0.08, cy + d / 2);
+      g.lineTo(cx + d * 0.08, cy + d / 2);
+      g.moveTo(cx, cy + d / 2 - d * 0.08);
+      g.lineTo(cx, cy + d / 2 + d * 0.08);
+      g.stroke();
+    };
+    done.forEach(({ name, c }, k) => {
+      const x = k * COL + COL / 2;
+      if (name) {
+        g.fillStyle = '#FFFFFF';
+        g.font = '600 30px "Noto Sans SC"';
+        g.textAlign = 'center';
+        g.textBaseline = 'alphabetic';
+        g.fillText(name, x, 44);
       }
+      circle(c, x, top + BIG / 2, BIG);
+      const y1 = top + BIG + 40 + 48;
+      circle(c, x - 110, y1, 96, true);
+      circle(c, x + 20, y1, 48);
+      circle(c, x + 100, y1, 36);
+      const y2 = darkH + 32 + 48;
+      circle(c, x - 110, y2, 96);
+      circle(c, x + 20, y2, 48);
+      circle(c, x + 100, y2, 36);
     });
     const check = `${job.outDir}/avatar-check.png`;
     await post(check, await new Promise((r) => sheet.toBlob(r, 'image/png')));
-    return { avatar: png, check };
+    return { avatars: done.map((d) => d.png), check };
   }
 
   // Sound only: the WAV next to where the MP4 would go (fast, for checking the sound design).

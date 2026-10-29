@@ -21,7 +21,7 @@
 
 **数据和发布文案**：每期发布后的后台数据、判断和下一期的改法记在 [运营/数据复盘.md](运营/数据复盘.md)，里面也有每期的抖音标题、话题和置顶评论。
 
-**账号资料**：名字「算给你看」、头像 [output/算给你看-头像.png](output/算给你看-头像.png)（代码画的）、可以直接复制的简介，都在 [运营/账号资料.md](运营/账号资料.md)。
+**账号资料**：名字「算给你看」、头像三个方案（代码画的，待选：[A 星球](output/算给你看-头像-A.png) · [B 骰子](output/算给你看-头像-B.png) · [C 钟形](output/算给你看-头像-C.png)）、可以直接复制的简介，都在 [运营/账号资料.md](运营/账号资料.md)。
 
 每期的分镜、片中用到的事实和实测结果都在 `videos/<期>/分镜.md`：[第 01 期](videos/001-buffon-needle/分镜.md) · [第 02 期](videos/002-monty-hall/分镜.md) · [第 03 期](videos/003-birthday/分镜.md) · [第 04 期](videos/004-random-walk/分镜.md) · [第 05 期](videos/005-regression/分镜.md) · [第 06 期](videos/006-survivors/分镜.md)。
 
@@ -83,7 +83,7 @@ node engine/caption-check.mjs videos/004-random-walk-vertical         # 用真�
 node engine/caption-density.mjs videos/006-survivors                  # 字幕密度：每分钟字数、每句字数、有字幕的时间占比
 node engine/render.mjs videos/006-survivors --no-silent --wav         # 带音效的 MP4 + 单独的 -音效.wav（给剪映）
 node engine/render.mjs videos/006-survivors --audio-only              # 只出音效 WAV（几秒），调声音时用
-node engine/render.mjs videos/account --avatar                        # 账号头像 PNG（1080×1080）+ 圆形裁切的检查图
+node engine/render.mjs videos/account --avatar                        # 账号头像 A/B/C 三个方案的 PNG（1080×1080）+ 圆形裁切的检查图
 node engine/inspect.mjs output/xxx.mp4 --every 1 [--frames]           # 抽帧拼图、镜头切换、音量、BPM（横竖屏都行）
 node engine/audio-bench.mjs videos/001-buffon-needle 10,30            # 测配乐渲染耗时
 ```

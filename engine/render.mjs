@@ -3,7 +3,7 @@
 //   node engine/render.mjs videos/001-buffon-needle --preview 0,2.5,10 [--scale 0.5]
 //   node engine/render.mjs videos/004-random-walk --cover   (16:9, 4:3, 3:4 cover JPGs, if the scene has cover())
 //   node engine/render.mjs videos/006-survivors --audio-only (just the sound track, as <output>-音效.wav)
-//   node engine/render.mjs videos/account --avatar     (1080 x 1080 avatar PNG + a circle-crop check sheet)
+//   node engine/render.mjs videos/account --avatar     (1080 x 1080 avatar PNG per option + a circle-crop check sheet)
 //   options: --out output/name.mp4   --no-silent (skip the extra copy without music)
 //            --wav (also write the sound track as a separate 16-bit WAV, for 剪映 and other editors)
 import path from 'node:path';
