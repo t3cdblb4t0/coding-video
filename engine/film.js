@@ -232,11 +232,15 @@ export function drawDenominator(ctx, { seen, seenLabel, total, totalLabel, alpha
   let right = x;
   if (alphaTotal > 0) {
     // First the seen number slides left to make room, then "/ total" fades in: never overlapping.
+    // The total's column is as wide as its number or its label, whichever is wider.
     const slide = clamp(alphaTotal * 2);
     const show = clamp(alphaTotal * 2 - 1);
     ctx.save();
     ctx.font = `600 44px ${MONO}`;
-    const tw = ctx.measureText(total).width;
+    const numW = ctx.measureText(total).width;
+    ctx.font = `500 20px ${SANS}`;
+    const labW = ctx.measureText(totalLabel).width;
+    const colW = Math.max(numW, labW);
     ctx.font = `300 44px ${MONO}`;
     const sw = ctx.measureText('/').width;
     if (show > 0) {
@@ -248,10 +252,10 @@ export function drawDenominator(ctx, { seen, seenLabel, total, totalLabel, alpha
       ctx.fillText(totalLabel, x, y - 50);
       ctx.font = `300 44px ${MONO}`;
       ctx.fillStyle = FILM.faint;
-      ctx.fillText('/', x - tw - 16, y);
+      ctx.fillText('/', x - colW - 16, y);
     }
     ctx.restore();
-    right = lerp(x, x - (tw + 16 + sw + 16), ease.inOut(slide));
+    right = lerp(x, x - (colW + 16 + sw + 16), ease.inOut(slide));
   }
   ctx.font = `600 44px ${MONO}`;
   ctx.fillStyle = color;

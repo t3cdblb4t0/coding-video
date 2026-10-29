@@ -124,7 +124,7 @@ export function people(model = PEOPLE_MODEL) {
   };
   const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
   return {
-    all, top, nTop,
+    n: model.n, all, top, nTop,
     gamblers: gamblers.length,
     topGamblers: top.filter((i) => all[i].allIn).length,
     gamblersInTop: top.filter((i) => all[i].allIn).length / gamblers.length,

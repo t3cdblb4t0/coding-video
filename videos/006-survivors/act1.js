@@ -395,7 +395,7 @@ export const MEMO_TITLE = ['A METHOD OF ESTIMATING PLANE VULNERABILITY', 'BASED 
 export const TYPE_RATE = 24;
 export const memoTypeStart = () => T.memo + 0.7;
 function drawMemo(ctx, t) {
-  const a = life(t, T.memo, T.sampleEnd + 1, 0.5, 0.5);
+  const a = life(t, T.memo, T.memoEnd + 0.6, 0.5, 0.6);
   if (a <= 0) return;
   const rise = (1 - ease.out(prog(t, T.memo, 0.6))) * 40;
   const x = 960;
@@ -487,10 +487,10 @@ function drawMemo(ctx, t) {
 }
 
 export function drawAct1(ctx, t) {
-  if (t > T.sampleEnd + 0.1) return;
+  if (t > T.memoEnd + 0.7) return;
   const v = view(t);
-  // The big diagram, dimmed under the memo.
-  const dim = 1 - 0.86 * ease.inOut(prog(t, T.memo - 0.2, 0.7));
+  // The big diagram, dimmed under the memo, gone as the people come in.
+  const dim = (1 - 0.86 * ease.inOut(prog(t, T.memo - 0.2, 0.7))) * (1 - prog(t, T.memoEnd, 0.6));
   const planeA = dim;
   strokePlane(ctx, v.cx, v.cy, v.s, { alpha: planeA, lw: 2.4, glow: 14 });
   // Engines glow gold once C is picked, until the camera pulls back.
@@ -535,7 +535,7 @@ export function drawAct1(ctx, t) {
   drawBars(ctx, t);
   // The instrument: seen planes; the denominator joins at T.denom.
   const seen = landedCount(t);
-  const insA = (1 - life(t, T.title - 0.1, T.titleEnd + 0.1, 0.2, 0.5)) * (1 - prog(t, T.memo - 0.2, 0.6) * 0.7);
+  const insA = (1 - life(t, T.title - 0.1, T.titleEnd + 0.1, 0.2, 0.5)) * (1 - prog(t, T.memo - 0.2, 0.6) * 0.7) * (1 - prog(t, T.memoEnd - 0.2, 0.5));
   ctx.save();
   ctx.translate(1856, 40);
   ctx.scale(st.big, st.big);
@@ -565,7 +565,9 @@ export function drawAct1(ctx, t) {
   drawMemo(ctx, t);
   // Title card over everything, with a flash on the way in.
   drawTitleCard(ctx, t, T.title, T.titleEnd, W, H, {
-    kicker: '幸存者偏差', title: '弹孔', latin: 'SURVIVORSHIP BIAS', subtitle: [['你看到的，都是'], ['飞回来的', C.gold]],
+    // The subtitle says up front what this has to do with the viewer (ep05: the topic everyone had
+    // lived through is the one people saved); the second half pays it off.
+    kicker: '幸存者偏差', title: '弹孔', latin: 'SURVIVORSHIP BIAS', subtitle: [['你刷到的成功经验，都是'], ['飞回来的', C.gold]],
     motif: (g, u) => {
       // One hole on an engine, with a ring spreading from it.
       g.save();
@@ -580,13 +582,41 @@ export function drawAct1(ctx, t) {
     },
   });
   drawFlash(ctx, t, T.title, W, H, { peak: 0.7 });
-  // End of the sample.
-  const end = prog(t, T.sampleEnd - 0.6, 0.6);
-  if (end > 0) {
-    ctx.save();
-    ctx.globalAlpha = end;
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
+}
+
+// The opening picture again (same position, same scale, same white holes), with one change: the
+// holes of the planes that never came back are laid over it, and the engines light up gold.
+export function drawCallback(ctx, t, t0, t1) {
+  const a = life(t, t0, t1, 0.6, 0.6);
+  if (a <= 0) return;
+  const v = { cx: 960, cy: 482, s: 1 };
+  ctx.save();
+  ctx.globalAlpha = a;
+  strokePlane(ctx, v.cx, v.cy, v.s, { alpha: 1, lw: 2.4, glow: 14 });
+  const size = 15;
+  for (const h of backHoles) dot(ctx, spr.hole, v.cx + h.x, v.cy + h.y, size, a * 0.9);
+  for (const h of lostHoles) {
+    const u = prog(t, t0 + 0.9 + h.j * 1.2, 0.35);
+    if (u <= 0) continue;
+    dot(ctx, spr.lost, v.cx + h.x, v.cy + h.y, size * (1.05 + 1.6 * (1 - ease.out(u))), a * 0.92);
   }
+  const eg = ease.out(prog(t, t0 + 2.4, 0.6));
+  if (eg > 0) {
+    ctx.globalAlpha = a * eg;
+    ctx.translate(v.cx, v.cy);
+    ctx.lineWidth = 3.2;
+    ctx.strokeStyle = C.gold;
+    ctx.shadowColor = C.gold;
+    ctx.shadowBlur = 26;
+    ctx.stroke(paths.nac);
+  }
+  ctx.restore();
+}
+
+// Cover art: the diagram with every hole seen on the planes that came back.
+export function drawCoverPlane(ctx, cx, cy, s) {
+  strokePlane(ctx, cx, cy, s, { alpha: 1, lw: 2.4 * Math.max(1, s), glow: 14 });
+  ctx.save();
+  for (const h of backHoles) dot(ctx, spr.hole, cx + h.x * s, cy + h.y * s, 15 * Math.sqrt(s), 0.9);
+  ctx.restore();
 }
