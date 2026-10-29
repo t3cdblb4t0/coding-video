@@ -1,454 +1,589 @@
-// Account avatar options for 「算给你看」, all drawn in code in the films' language: night blue,
-// fine stars, gold = what the computation finds, ice blue = the rest, thin glowing lines, no
-// lettering. Each picture comes from a computation with a fixed seed (logged when rendered):
-//   A 星球  12,000 points spread evenly over a sphere (a Fibonacci lattice), lit from the upper left,
-//          with a banded ring and a point of light riding it: the genre's "point of light on a line".
-//   B 骰子  a die in line art, the series' symbol of luck (episodes 05-07 are about luck vs skill).
-//   C 钟形  200,000 balls dropped through 30 rows of pegs; where they land piles into a bell curve.
-//   node engine/render.mjs videos/account --avatar   -> output/算给你看-头像-A/B/C.png + a check sheet
-// Douyin shows avatars as a circle, as small as ~36 px in comments, with its red follow "+" over the
-// bottom edge in the feed: each design is one bold shape in the middle of the circle.
+// Account avatar for 「算给你看」: 半枫, a maple leaf that is half leaf and half digital life.
+// User, 10-29: the core is 数字生命 (digital life) and 半枫, which sounds like 半疯 (half mad).
+//   Left half: the leaf as it grows, gold near the stalk and red towards the edges, with its veins
+//   and the fine network of smaller veins between them (the leaf's own cells).
+//   Right half: the same half leaf as square cells of Conway's Game of Life, the best-known digital
+//   life: each cell lives or dies by counting its 8 neighbours. The leaf's cells are held alive, so
+//   the whole outline reads; at the mouth of the gap between the central and the side lobe, the
+//   edge cells and a scatter of cells just outside are left to the rules for 4 generations (the
+//   ones that die leave a faint trace). Three gliders, the Game of Life's walkers, fly off from
+//   there. The leaf's veins carry on across the midrib as lines of gold cells.
+//   The midrib between the halves glows: the line where the leaf turns into code.
+//   Two versions: 半枫 as above, and 半疯, where strips of the digital half slip sideways with red
+//   and blue fringes, like a glitching screen, while the leaf half stays whole.
+// node engine/render.mjs videos/account --avatar  -> output/算给你看-头像-<name>.png + a check sheet
+// (Douyin crops avatars to a circle, as small as ~36 px in comments, with a red follow "+" over the
+// bottom edge in the feed.) The earlier options (planet, die, bell curve) are in git history.
 import { clamp, lerp, smooth, mulberry32 } from '../../engine/kit.js';
 import { buildFilmBackground, makeDust, drawDust } from '../../engine/film.js';
 
 const S = 1080;
-const GOLD = '246,207,126';
-const WARM = '255,241,214';
-const ICE = '127,216,242';
+const ICE = [127, 216, 242];
 
-const sprites = new Map();
-function sprite(rgb) {
-  if (sprites.has(rgb)) return sprites.get(rgb);
-  const n = 64;
-  const c = document.createElement('canvas');
-  c.width = n;
-  c.height = n;
-  const g = c.getContext('2d');
-  const grad = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
-  grad.addColorStop(0, `rgba(${rgb},1)`);
-  grad.addColorStop(0.22, `rgba(${rgb},0.95)`);
-  grad.addColorStop(0.42, `rgba(${rgb},0.3)`);
-  grad.addColorStop(1, `rgba(${rgb},0)`);
-  g.fillStyle = grad;
-  g.fillRect(0, 0, n, n);
-  sprites.set(rgb, c);
-  return c;
-}
-function dot(ctx, rgb, x, y, d, a) {
-  if (a <= 0.003) return;
-  ctx.globalAlpha = Math.min(1, a);
-  ctx.drawImage(sprite(rgb), x - d / 2, y - d / 2, d, d);
-}
-function glowLine(ctx, path, rgb, lw, alpha, blur) {
-  ctx.save();
-  // Reset what dot() leaves behind: the near half of the ring was drawn at the last dot's alpha.
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.strokeStyle = `rgba(${rgb},${alpha})`;
-  ctx.shadowColor = `rgba(${rgb},0.9)`;
-  ctx.shadowBlur = blur;
-  ctx.lineWidth = lw;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.stroke(path);
-  ctx.restore();
-}
-function layer(w) {
+function layer(w, h = w) {
   const c = document.createElement('canvas');
   c.width = w;
-  c.height = w;
+  c.height = h;
+  return c;
+}
+const rgba = ([r, g, b], a = 1) => `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
+const mix = (c0, c1, t) => [lerp(c0[0], c1[0], t), lerp(c0[1], c1[1], t), lerp(c0[2], c1[2], t)];
+
+// ---- noise -------------------------------------------------------------------------------------
+function hash2(i, j, s) {
+  let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263) + Math.imul(s, 1442695041)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function vnoise(x, y, s) {
+  const i = Math.floor(x);
+  const j = Math.floor(y);
+  const fx = x - i;
+  const fy = y - j;
+  const sx = fx * fx * (3 - 2 * fx);
+  const sy = fy * fy * (3 - 2 * fy);
+  return lerp(lerp(hash2(i, j, s), hash2(i + 1, j, s), sx), lerp(hash2(i, j + 1, s), hash2(i + 1, j + 1, s), sx), sy);
+}
+// Distances to the nearest and second-nearest of a jittered grid of points (Worley noise): where the
+// two are close, the pixel lies on a boundary between cells.
+function worley(x, y, s) {
+  const i = Math.floor(x);
+  const j = Math.floor(y);
+  let f1 = 9;
+  let f2 = 9;
+  for (let dj = -1; dj <= 1; dj++) {
+    for (let di = -1; di <= 1; di++) {
+      const px = i + di + hash2(i + di, j + dj, s);
+      const py = j + dj + hash2(i + di, j + dj, s + 101);
+      const d = Math.hypot(px - x, py - y);
+      if (d < f1) {
+        f2 = f1;
+        f1 = d;
+      } else if (d < f2) f2 = d;
+    }
+  }
+  return [f1, f2];
+}
+
+// ---- the leaf ----------------------------------------------------------------------------------
+// Leaf units: origin where the stalk meets the blade, y up, the central lobe's tip at (0, 1). The
+// right half runs from that tip clockwise down to the stalk; the left half is its mirror image.
+// 't' = a lobe tip or tooth (sharp), 'n' = the notch between teeth, 's' = a sinus between lobes
+// (rounded), 'e' = the end, on the midrib.
+// Proportions of a sugar maple leaf: a central lobe with two shoulders, side lobes with a tooth above
+// and below their tip, small lobes at the base.
+const OUTLINE = [
+  [0, 1, 't'],
+  [0.1, 0.79, 'n'],
+  [0.25, 0.845, 't'],
+  [0.19, 0.5, 's'],
+  [0.355, 0.64, 't'],
+  [0.405, 0.54, 'n'],
+  [0.61, 0.585, 't'],
+  [0.535, 0.37, 'n'],
+  [0.63, 0.32, 't'],
+  [0.3, 0.07, 's'],
+  [0.345, -0.055, 't'],
+  [0.05, -0.005, 's'],
+  [0, -0.02, 'e'],
+];
+const BOW = 0.06; // how far each edge between two points curves inwards, as a share of its length
+const ROUND = 0.05; // how much of the outline around each sinus is replaced by a rounded curve
+
+function bez(a, c, b, t) {
+  const s = 1 - t;
+  return [s * s * a[0] + 2 * s * t * c[0] + t * t * b[0], s * s * a[1] + 2 * s * t * c[1] + t * t * b[1]];
+}
+function halfOutline() {
+  const pts = [[OUTLINE[0][0], OUTLINE[0][1]]];
+  const marks = [0];
+  for (let i = 1; i < OUTLINE.length; i++) {
+    const a = OUTLINE[i - 1];
+    const b = OUTLINE[i];
+    // Going clockwise with y up, the inside of the leaf is to the right: (dy, -dx).
+    const c = [(a[0] + b[0]) / 2 + BOW * (b[1] - a[1]), (a[1] + b[1]) / 2 - BOW * (b[0] - a[0])];
+    for (let k = 1; k <= 24; k++) pts.push(bez(a, c, b, k / 24));
+    marks.push(pts.length - 1);
+  }
+  for (let m = OUTLINE.length - 1; m >= 0; m--) {
+    if (OUTLINE[m][2] !== 's') continue;
+    const at = marks[m];
+    const V = pts[at];
+    let a = at;
+    while (a > 0 && Math.hypot(pts[a][0] - V[0], pts[a][1] - V[1]) < ROUND) a--;
+    let b = at;
+    while (b < pts.length - 1 && Math.hypot(pts[b][0] - V[0], pts[b][1] - V[1]) < ROUND) b++;
+    const curve = [];
+    for (let k = 1; k < 16; k++) curve.push(bez(pts[a], V, pts[b], k / 16));
+    pts.splice(a + 1, b - a - 1, ...curve);
+  }
+  return pts;
+}
+const HALF = halfOutline();
+const LEAF = [...HALF, ...HALF.slice(1, -1).reverse().map(([x, y]) => [-x, y])];
+const LEFT = [...HALF.map(([x, y]) => [-x, y])];
+
+function pathOf(pts, close = true) {
+  const p = new Path2D();
+  pts.forEach(([x, y], k) => (k ? p.lineTo(x, y) : p.moveTo(x, y)));
+  if (close) p.closePath();
+  return p;
+}
+function insidePoly(poly, x, y) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
+  }
   return c;
 }
 
-function backdrop(ctx, w, seed) {
-  ctx.drawImage(buildFilmBackground(w, w, { cx: 0.5, cy: 0.5, seed }), 0, 0);
-  drawDust(ctx, makeDust(seed, Math.round(150 * (w / S) ** 2 + 20), w, w), 0, w, w, { rgb: '160,196,255', alpha: 0.32 });
+// Veins of the right half (mirrored for the left): primary veins from the stalk to the side lobes'
+// tips (the midrib to the central tip is the seam), secondary veins out to the teeth.
+// [start, control, end, width at the start, width at the end] (widths in px at 1080).
+const VEINS = [
+  [[0, 0.02], [0.28, 0.24], [0.6, 0.575], 8, 1.6],
+  [[0, 0], [0.17, -0.01], [0.335, -0.05], 6, 1.4],
+  [[0, 0.55], [0.1, 0.72], [0.245, 0.835], 3.6, 0.9],
+  [[0.26, 0.242], [0.29, 0.45], [0.35, 0.63], 3.6, 0.9],
+  [[0.35, 0.327], [0.49, 0.34], [0.62, 0.32], 3.4, 0.9],
+];
+const veinPts = ([a, c, b], n = 40) => Array.from({ length: n + 1 }, (_, k) => bez(a, c, b, k / n));
+
+// Gold near the stalk, red towards the edges, in patches: the leaf's colour at a point.
+const RAMP = [
+  [0, [250, 186, 84]],
+  [0.3, [243, 128, 48]],
+  [0.6, [224, 72, 36]],
+  [1, [160, 28, 26]],
+];
+function ramp(t) {
+  for (let k = 1; k < RAMP.length; k++) {
+    if (t <= RAMP[k][0]) {
+      const [t0, c0] = RAMP[k - 1];
+      const [t1, c1] = RAMP[k];
+      return mix(c0, c1, (t - t0) / (t1 - t0));
+    }
+  }
+  return RAMP[RAMP.length - 1][1].slice();
+}
+function leafColor(x, y) {
+  const r = Math.hypot(x, y);
+  const m = vnoise(x * 4 + 7.3, y * 4 + 1.1, 3);
+  const m2 = vnoise(x * 12 + 2.2, y * 12 + 5.5, 9);
+  return ramp(clamp(r / 0.9 + (m - 0.5) * 0.36 + (m2 - 0.5) * 0.1));
 }
 
-// A · 星球: 12,000 points spread evenly over a sphere (a Fibonacci lattice, each point nudged by at
-// most 15% of the spacing along each axis so it reads as fine grain, not a mesh), lit from the upper left: gold
-// where the light falls, an ice-blue rim on the night side, and grains that shrink towards the
-// edge the way marks on a real ball do. A banded ring, like Saturn's, passes behind the planet and
-// in front of it, with a point of light riding its near side.
-export function drawPlanet(ctx, { w = S } = {}) {
-  const u = w / S;
-  const cx = w * 0.5;
-  const cy = w * 0.515;
-  const R = 0.245 * w;
-  const M = 12000;
-  const ga = Math.PI * (3 - Math.sqrt(5));
-  const jit = 0.3 * Math.sqrt((4 * Math.PI) / M);
-  const tilt = 0.42;
-  const spin = 0.7;
-  const L = [-0.55, -0.62, 0.56].map((x, _, v) => x / Math.hypot(...v));
-  const jr = mulberry32(2600);
-  const pts = [];
-  for (let i = 0; i < M; i++) {
-    const y0 = 1 - (2 * (i + 0.5)) / M;
-    const r = Math.sqrt(1 - y0 * y0);
-    const th = ga * i;
-    let x = Math.cos(th) * r + (jr() - 0.5) * jit;
-    let y = y0 + (jr() - 0.5) * jit;
-    let z = Math.sin(th) * r + (jr() - 0.5) * jit;
-    const nn = Math.hypot(x, y, z);
-    x /= nn;
-    y /= nn;
-    z /= nn;
-    [x, z] = [x * Math.cos(spin) + z * Math.sin(spin), -x * Math.sin(spin) + z * Math.cos(spin)];
-    [y, z] = [y * Math.cos(tilt) - z * Math.sin(tilt), y * Math.sin(tilt) + z * Math.cos(tilt)];
-    if (z <= 0) continue; // only the near half shows
-    pts.push({ x, y, z, lit: clamp(x * L[0] + y * L[1] + z * L[2]) });
-  }
-  pts.sort((a, b) => a.z - b.z);
-  // The ring: an ellipse seen from a little above its plane, near side at the bottom.
-  const K = 0.2;
-  const ROT = -0.36;
-  const ringPt = (t, r) => {
-    const ex = Math.cos(t) * r * R;
-    const ey = Math.sin(t) * r * R * K;
-    return [cx + ex * Math.cos(ROT) - ey * Math.sin(ROT), cy + ex * Math.sin(ROT) + ey * Math.cos(ROT)];
-  };
-  const arc = (r, t0, t1) => {
-    const p = new Path2D();
-    for (let k = 0; k <= 240; k++) {
-      const [x, y] = ringPt(lerp(t0, t1, k / 240), r);
-      if (k === 0) p.moveTo(x, y);
-      else p.lineTo(x, y);
+// ---- Conway's Game of Life ---------------------------------------------------------------------
+function lifeStep(cur, NI, NJ, fixed, free) {
+  const nxt = new Uint8Array(NI * NJ);
+  for (let j = 0; j < NJ; j++) {
+    for (let i = 0; i < NI; i++) {
+      const k = j * NI + i;
+      if (fixed[k]) {
+        nxt[k] = 1;
+        continue;
+      }
+      if (!free[k]) continue;
+      let n = 0;
+      for (let dj = -1; dj <= 1; dj++) {
+        const jj = j + dj;
+        if (jj < 0 || jj >= NJ) continue;
+        for (let di = -1; di <= 1; di++) {
+          const ii = i + di;
+          if ((di || dj) && ii >= 0 && ii < NI) n += cur[jj * NI + ii];
+        }
+      }
+      nxt[k] = n === 3 || (n === 2 && cur[k]) ? 1 : 0;
     }
-    return p;
-  };
-  // Bands (radius in planet radii, brightness), with a dark gap between the inner and outer ring.
-  const BANDS = [
-    [1.42, 0.14], [1.46, 0.3], [1.5, 0.44], [1.54, 0.36], [1.58, 0.5], [1.62, 0.26],
-    [1.69, 0.22], [1.73, 0.34], [1.77, 0.24], [1.81, 0.12],
-  ];
-  const rr = mulberry32(77);
-  const grains = Array.from({ length: 1800 }, () => {
-    const outer = rr() < 0.38;
-    return { t: rr() * Math.PI * 2, r: outer ? lerp(1.68, 1.82, rr()) : lerp(1.42, 1.63, rr()), s: rr() };
-  });
-  const ring = (near, f) => {
-    const [t0, t1] = near ? [0, Math.PI] : [Math.PI, 2 * Math.PI];
-    for (const [r, a] of BANDS) glowLine(ctx, arc(r, t0, t1), ICE, 2.2 * u, a * f, 5 * u);
-    ctx.globalCompositeOperation = 'lighter';
-    for (const g of grains) {
-      if (Math.sin(g.t) > 0 !== near) continue;
-      const [x, y] = ringPt(g.t, g.r);
-      if (!near && Math.hypot(x - cx, y - cy) < R) continue;
-      dot(ctx, g.s > 0.96 ? WARM : ICE, x, y, (3 + 3 * g.s) * u, (0.25 + 0.45 * g.s) * f);
-    }
-    ctx.globalCompositeOperation = 'source-over';
-  };
-  console.log(`[avatar A] ${M} points on a sphere (Fibonacci lattice), ${pts.length} on the near side; ring ${BANDS.length} bands + ${grains.length} grains`);
-  ctx.save();
-  backdrop(ctx, w, 23);
-  ring(false, 0.65);
-  // The body: a dark disc that hides the stars and the far ring; the light comes from the points.
-  const body = ctx.createRadialGradient(cx - 0.35 * R, cy - 0.4 * R, R * 0.1, cx, cy, R);
-  body.addColorStop(0, '#141C30');
-  body.addColorStop(1, '#060A14');
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = body;
-  ctx.beginPath();
-  ctx.arc(cx, cy, R, 0, Math.PI * 2);
-  ctx.fill();
-  // A soft gold sheen on the lit side under the points, so the planet still reads as gold, lit from
-  // one side, when the avatar is shown at 48 px and the points blur together.
-  const sheen = ctx.createRadialGradient(cx + L[0] * 0.55 * R, cy + L[1] * 0.55 * R, 0, cx + L[0] * 0.55 * R, cy + L[1] * 0.55 * R, 1.5 * R);
-  sheen.addColorStop(0, `rgba(${GOLD},0.3)`);
-  sheen.addColorStop(0.45, `rgba(${GOLD},0.12)`);
-  sheen.addColorStop(1, `rgba(${GOLD},0)`);
-  ctx.fillStyle = sheen;
-  ctx.fill();
-  // Atmosphere: a gold glow along the lit limb, fading towards the terminator. The conic gradient
-  // peaks in the light's direction on screen.
-  const la = Math.atan2(L[1], L[0]);
-  const cg = ctx.createConicGradient(la - Math.PI, cx, cy);
-  cg.addColorStop(0, `rgba(${GOLD},0)`);
-  cg.addColorStop(0.3, `rgba(${GOLD},0)`);
-  cg.addColorStop(0.5, `rgba(${GOLD},0.8)`);
-  cg.addColorStop(0.7, `rgba(${GOLD},0)`);
-  cg.addColorStop(1, `rgba(${GOLD},0)`);
-  ctx.save();
-  ctx.strokeStyle = cg;
-  ctx.filter = `blur(${Math.max(1, Math.round(14 * u))}px)`;
-  ctx.lineWidth = 22 * u;
-  ctx.beginPath();
-  ctx.arc(cx, cy, R * 1.02, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.filter = 'none';
-  ctx.restore();
-  // The points.
-  ctx.globalCompositeOperation = 'lighter';
-  for (const p of pts) {
-    const x = cx + p.x * R;
-    const y = cy + p.y * R;
-    const fs = 0.45 + 0.55 * Math.sqrt(p.z);
-    const b = smooth(0, 0.85, p.lit);
-    const night = 1 - smooth(0, 0.22, p.lit);
-    const rim = (1 - p.z) ** 2.2 * night;
-    const d = (5 + 7.5 * b) * fs * u;
-    if (b > 0.005) dot(ctx, GOLD, x, y, d, 0.1 + 0.85 * b);
-    if (b > 0.6) dot(ctx, WARM, x, y, d * 0.55, (b - 0.6) * 2.2);
-    dot(ctx, ICE, x, y, (4.5 + 2.5 * rim) * fs * u, 0.04 * night + 0.9 * rim);
   }
-  ctx.globalCompositeOperation = 'source-over';
-  ring(true, 1);
-  // A point of light riding the near side of the ring towards its right end, its trail behind it.
-  const tc = 0.42;
-  const tail = 0.8;
-  ctx.globalCompositeOperation = 'lighter';
-  for (let k = 0; k < 90; k++) {
-    const f = 1 - k / 90;
-    const [x, y] = ringPt(tc + (k / 90) * tail, 1.81);
-    dot(ctx, GOLD, x, y, (5 + 16 * f) * u, 0.6 * f * f);
+  return nxt;
+}
+// A glider heading up and to the right (y up), in each of its 4 phases.
+function gliderPhases() {
+  const N = 8;
+  let g = new Uint8Array(N * N);
+  for (const [i, j] of [[1, 2], [2, 3], [0, 4], [1, 4], [2, 4]]) g[j * N + i] = 1;
+  const all = new Uint8Array(N * N).fill(1);
+  const none = new Uint8Array(N * N);
+  const phases = [];
+  for (let s = 0; s < 4; s++) {
+    const cells = [];
+    for (let k = 0; k < N * N; k++) if (g[k]) cells.push([k % N, (k / N) | 0]);
+    const i0 = Math.min(...cells.map((c) => c[0]));
+    const j0 = Math.min(...cells.map((c) => c[1]));
+    phases.push(cells.map(([i, j]) => [i - i0, j - j0]));
+    g = lifeStep(g, N, N, none, all);
   }
-  const [hx, hy] = ringPt(tc, 1.81);
-  dot(ctx, GOLD, hx, hy, 96 * u, 0.5);
-  dot(ctx, WARM, hx, hy, 36 * u, 1);
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.restore();
+  return phases;
 }
 
-// B · 骰子: an isometric die with softly rounded corners. Faces dark glass with a faint gold rim
-// light, edges gold, pips lit from inside; 1 on top, 2 on the right, 3 on the left. On a real die
-// 1, 2 and 3 meet at one corner; here they run clockwise round it, as on Chinese dice.
-const PIPS = {
-  1: [[0.5, 0.5]],
-  2: [[0.27, 0.27], [0.73, 0.73]],
-  3: [[0.25, 0.25], [0.5, 0.5], [0.75, 0.75]],
-};
-export function drawDie(ctx, { w = S } = {}) {
+// ---- the picture -------------------------------------------------------------------------------
+// glitch: the 半疯 variant. Strips of the digital half slip sideways and its colours split, the way a
+// screen glitches. The leaf half is left alone: one half sane, one half mad.
+export function drawHalfMaple(ctx, { w = S, tilt = 0.12, glitch = false, gens = 4, seed = 2026 } = {}) {
   const u = w / S;
-  const cx = w * 0.5;
-  const cy = w * 0.52;
-  const e = 0.335 * w;
-  const c30 = Math.cos(Math.PI / 6);
-  const ex = [c30 * e, 0.5 * e];
-  const ey = [-c30 * e, 0.5 * e];
-  const ez = [0, -e];
-  const P = (i, j, k) => [cx + (i - 0.5) * ex[0] + (j - 0.5) * ey[0] + (k - 0.5) * ez[0], cy + (i - 0.5) * ex[1] + (j - 0.5) * ey[1] + (k - 0.5) * ez[1]];
-  const face = (pts) => {
-    const p = new Path2D();
-    pts.forEach(([i, j, k], n) => (n === 0 ? p.moveTo(...P(i, j, k)) : p.lineTo(...P(i, j, k))));
-    p.closePath();
-    return p;
-  };
-  const top = face([[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]]);
-  const right = face([[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]]);
-  const left = face([[0, 1, 0], [1, 1, 0], [1, 1, 1], [0, 1, 1]]);
-  // The silhouette, a hexagon with rounded corners.
-  const hex = [[0, 0, 1], [1, 0, 1], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 1, 1]].map(([i, j, k]) => P(i, j, k));
-  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-  const hull = new Path2D();
-  hull.moveTo(...mid(hex[5], hex[0]));
-  hex.forEach((p, i) => hull.arcTo(...p, ...mid(p, hex[(i + 1) % 6]), 0.075 * e));
-  hull.closePath();
+  const U = 610 * u; // one leaf unit in px
+  const anchor = [0.06, 0.47]; // the leaf point placed at the centre of the picture
+  const cosA = Math.cos(tilt);
+  const sinA = Math.sin(tilt);
+  const cx = w / 2 - (anchor[0] * cosA + anchor[1] * sinA) * U;
+  const cy = w / 2 + (-anchor[0] * sinA + anchor[1] * cosA) * U;
+  const toCanvas = (x, y) => [cx + U * (x * cosA + y * sinA), cy - U * (-x * sinA + y * cosA)];
+  const toLeaf = (X, Y) => [((X - cx) * cosA + (Y - cy) * sinA) / U, ((X - cx) * sinA - (Y - cy) * cosA) / U];
+  const leafT = (g = ctx) => g.setTransform(U * cosA, U * sinA, U * sinA, -U * cosA, cx, cy);
+  const px = (v) => (v * u) / U; // px at 1080 -> leaf units
+  const leafPath = pathOf(LEAF);
+  const leftPath = pathOf(LEFT);
+  const leftEdge = pathOf(LEFT, false);
+  const rightEdge = pathOf(HALF, false);
+
   ctx.save();
-  backdrop(ctx, w, 41);
-  // Floor glow under the die.
-  const [bx, by] = P(1, 1, 0);
-  const fl = ctx.createRadialGradient(bx, by + 10 * u, 10 * u, bx, by + 10 * u, 0.36 * w);
-  fl.addColorStop(0, `rgba(${GOLD},0.22)`);
-  fl.addColorStop(1, `rgba(${GOLD},0)`);
-  ctx.fillStyle = fl;
-  ctx.save();
-  ctx.translate(bx, by + 10 * u);
-  ctx.scale(1, 0.32);
-  ctx.translate(-bx, -(by + 10 * u));
-  ctx.beginPath();
-  ctx.arc(bx, by + 10 * u, 0.36 * w, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-  ctx.save();
-  ctx.clip(hull);
-  // Faces: top lit, right in half light, left in shade.
-  const fill = (path, c0, c1, a, b) => {
-    const g = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
-    g.addColorStop(0, c0);
-    g.addColorStop(1, c1);
+  ctx.drawImage(buildFilmBackground(w, w, { cx: 0.5, cy: 0.5, seed: 61 }), 0, 0);
+  drawDust(ctx, makeDust(61, Math.round(150 * u * u + 20), w, w), 0, w, w, { rgb: '160,196,255', alpha: 0.3 });
+  // Halos: warm behind the leaf half, cold behind the digital half.
+  for (const [lx, ly, c, a] of [[-0.36, 0.45, [236, 96, 44], 0.15], [0.4, 0.45, ICE, 0.1]]) {
+    const [hx, hy] = toCanvas(lx, ly);
+    const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, 0.9 * U);
+    g.addColorStop(0, rgba(c, a));
+    g.addColorStop(1, rgba(c, 0));
     ctx.fillStyle = g;
-    ctx.fill(path);
+    ctx.fillRect(0, 0, w, w);
+  }
+
+  // ---- the digital half's grid and its Game of Life run ----
+  const p = 0.03; // cell pitch in leaf units (18 px at 1080)
+  const y0 = -0.3;
+  const NI = Math.ceil(1.0 / p);
+  const NJ = Math.ceil((1.3 - y0) / p);
+  const cellX = (i) => (i + 0.5) * p;
+  const cellY = (j) => y0 + (j + 0.5) * p;
+  // A cell belongs to the leaf when at least 6 of 16 points spread over its square lie inside the
+  // outline, so the narrow teeth keep their cells.
+  const inLeaf = new Uint8Array(NI * NJ);
+  for (let j = 0; j < NJ; j++) {
+    for (let i = 0; i < NI; i++) {
+      let n = 0;
+      for (let a = 0; a < 4; a++) {
+        for (let b = 0; b < 4; b++) n += insidePoly(LEAF, cellX(i) + ((a + 0.5) / 4 - 0.5) * p, cellY(j) + ((b + 0.5) / 4 - 0.5) * p) ? 1 : 0;
+      }
+      inLeaf[j * NI + i] = n >= 6 ? 1 : 0;
+    }
+  }
+  const bfs = (src) => {
+    const dist = new Int16Array(NI * NJ).fill(-1);
+    const q = [];
+    for (let k = 0; k < NI * NJ; k++) {
+      if (src(k)) {
+        dist[k] = 0;
+        q.push(k);
+      }
+    }
+    for (let h = 0; h < q.length; h++) {
+      const k = q[h];
+      const i = k % NI;
+      const j = (k / NI) | 0;
+      for (let dj = -1; dj <= 1; dj++) {
+        for (let di = -1; di <= 1; di++) {
+          const ii = i + di;
+          const jj = j + dj;
+          if (ii < 0 || jj < 0 || ii >= NI || jj >= NJ) continue;
+          const kk = jj * NI + ii;
+          if (dist[kk] < 0) {
+            dist[kk] = dist[k] + 1;
+            q.push(kk);
+          }
+        }
+      }
+    }
+    return dist;
   };
-  fill(top, '#2C3A5C', '#18223A', P(0, 0, 1), P(1, 1, 1));
-  fill(right, '#16213B', '#0B1225', P(1, 0, 1), P(1, 1, 0));
-  fill(left, '#0D1529', '#070C19', P(0, 1, 1), P(1, 1, 0));
-  // Rim light just inside each face's edges, as if the glass caught the gold edges.
-  for (const [f, a] of [[top, 0.2], [right, 0.12], [left, 0.08]]) {
+  const din = bfs((k) => !inLeaf[k]); // inside: cells to the nearest cell outside the leaf
+  const dout = bfs((k) => inLeaf[k]); // outside: cells to the leaf
+  // The corner the gliders leave from, at the mouth of the gap between the central and the side lobe.
+  // Everywhere else the leaf's cells are held alive, so the whole outline stays readable; here the
+  // edge cells, and a scatter of cells just outside, are left to the rules.
+  const EXIT = [0.27, 0.66];
+  const zone = (x, y) => Math.exp(-((x - EXIT[0]) ** 2 + (y - EXIT[1]) ** 2) / (2 * 0.09 ** 2));
+  const rand = mulberry32(seed);
+  const fixed = new Uint8Array(NI * NJ);
+  const free = new Uint8Array(NI * NJ);
+  let cur = new Uint8Array(NI * NJ);
+  for (let k = 0; k < NI * NJ; k++) {
+    const z = zone(cellX(k % NI), cellY((k / NI) | 0));
+    if (inLeaf[k] && (din[k] >= 2 || z < 0.3)) fixed[k] = 1;
+    if (!fixed[k] && (inLeaf[k] || (dout[k] <= 3 && z > 0.12))) free[k] = 1;
+    if (inLeaf[k]) cur[k] = fixed[k] || rand() < 0.8 ? 1 : 0;
+    else if (free[k]) cur[k] = rand() < 0.5 * z ? 1 : 0;
+  }
+  const last = new Int16Array(NI * NJ).fill(-1); // the last generation each cell was alive
+  for (let k = 0; k < NI * NJ; k++) if (cur[k]) last[k] = 0;
+  for (let g = 1; g <= gens; g++) {
+    cur = lifeStep(cur, NI, NJ, fixed, free);
+    for (let k = 0; k < NI * NJ; k++) if (cur[k]) last[k] = g;
+  }
+  // Gliders leaving through the gap, fading as they go.
+  const phases = gliderPhases();
+  const GLIDERS = [[0.31, 0.75, 0, 0.95], [0.41, 0.85, 1, 0.68], [0.51, 0.95, 2, 0.42]];
+  const glider = new Map();
+  for (const [gx, gy, ph, a] of GLIDERS) {
+    const i0 = Math.round(gx / p);
+    const j0 = Math.round((gy - y0) / p);
+    // Clear the cells around each glider so it reads as one shape.
+    for (let dj = -2; dj <= 4; dj++) {
+      for (let di = -2; di <= 4; di++) {
+        const i = i0 + di;
+        const j = j0 + dj;
+        if (i >= 0 && j >= 0 && i < NI && j < NJ && !inLeaf[j * NI + i]) {
+          cur[j * NI + i] = 0;
+          last[j * NI + i] = -1;
+        }
+      }
+    }
+    for (const [di, dj] of phases[ph]) glider.set((j0 + dj) * NI + i0 + di, a);
+  }
+  const veinCell = new Uint8Array(NI * NJ);
+  const veinSamples = VEINS.flatMap((v) => veinPts(v, 80));
+  for (let k = 0; k < NI * NJ; k++) {
+    if (!cur[k] || !inLeaf[k]) continue;
+    const x = cellX(k % NI);
+    const y = cellY((k / NI) | 0);
+    if (veinSamples.some(([vx, vy]) => Math.abs(vx - x) < 0.5 * p && Math.abs(vy - y) < 0.5 * p)) veinCell[k] = 1;
+  }
+  let nLeaf = 0;
+  let nHeld = 0;
+  let nDied = 0;
+  let nOut = 0;
+  for (let k = 0; k < NI * NJ; k++) {
+    nLeaf += inLeaf[k];
+    nHeld += fixed[k];
+    if (inLeaf[k] && !cur[k]) nDied++;
+    if (!inLeaf[k] && cur[k]) nOut++;
+  }
+  console.log(`[avatar] grid ${NI}x${NJ}: ${nLeaf} cells in the half leaf, ${nHeld} held alive; after ${gens} generations of Life near the gap, ${nDied} leaf cells dead and ${nOut} grown outside; ${GLIDERS.length} gliders`);
+
+  // ---- the stalk, behind the blade ----
+  leafT();
+  const stalk = veinPts([[0, 0], [0, -0.16], [-0.055, -0.3]], 30);
+  for (let k = 1; k < stalk.length; k++) {
+    const t = k / (stalk.length - 1);
+    ctx.strokeStyle = rgba(mix([200, 78, 36], [128, 34, 22], t));
+    ctx.lineWidth = px(lerp(10, 4.5, t));
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(...stalk[k - 1]);
+    ctx.lineTo(...stalk[k]);
+    ctx.stroke();
+  }
+
+  // ---- the leaf half ----
+  // Edge shading comes from a blurred mask of the whole leaf: 1 deep inside, 0.5 at the edge.
+  const mask = layer(w);
+  const mg = mask.getContext('2d');
+  leafT(mg);
+  mg.fillStyle = '#fff';
+  mg.fill(leafPath);
+  const soft = layer(w);
+  const sg = soft.getContext('2d');
+  sg.filter = `blur(${Math.max(1, Math.round(20 * u))}px)`;
+  sg.drawImage(mask, 0, 0);
+  const edge = sg.getImageData(0, 0, w, w).data;
+  const tex = layer(w);
+  const tg = tex.getContext('2d');
+  const img = tg.createImageData(w, w);
+  const d = img.data;
+  const cellSize = 0.05;
+  for (let Y = 0; Y < w; Y++) {
+    for (let X = 0; X < w; X++) {
+      const [x, y] = toLeaf(X + 0.5, Y + 0.5);
+      if (x > 0.02 || x < -0.7 || y < -0.15 || y > 1.05) continue;
+      const o = (Y * w + X) * 4;
+      let [R, G, B] = leafColor(x, y);
+      const [f1, f2] = worley(x / cellSize, y / cellSize, 17);
+      const line = 1 - smooth(0, 0.1, f2 - f1);
+      const dome = smooth(0.15, 0.8, f1);
+      R += (255 - R) * 0.16 * line - 12 * dome;
+      G += (206 - G) * 0.16 * line - 8 * dome;
+      B += (132 - B) * 0.16 * line - 5 * dome;
+      const e = clamp((1 - edge[o + 3] / 255) * 2);
+      const dk = 1 - 0.3 * e * e;
+      d[o] = R * dk;
+      d[o + 1] = G * dk * (1 - 0.15 * e);
+      d[o + 2] = B * dk * (1 - 0.15 * e);
+      d[o + 3] = 255;
+    }
+  }
+  tg.putImageData(img, 0, 0);
+  leafT();
+  ctx.save();
+  ctx.shadowColor = 'rgba(240,104,48,0.6)';
+  ctx.shadowBlur = 44 * u;
+  ctx.fillStyle = 'rgb(214,74,38)';
+  ctx.fill(leftPath);
+  ctx.restore();
+  ctx.save();
+  ctx.clip(leftPath);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(tex, 0, 0);
+  leafT();
+  ctx.lineCap = 'round';
+  ctx.shadowColor = 'rgba(255,200,120,0.6)';
+  ctx.shadowBlur = 5 * u;
+  for (const [a, c, b, w0, w1] of VEINS) {
+    const pts = veinPts([[-a[0], a[1]], [-c[0], c[1]], [-b[0], b[1]]]);
+    for (let k = 1; k < pts.length; k++) {
+      const t = k / (pts.length - 1);
+      ctx.strokeStyle = `rgba(255,208,134,${lerp(0.6, 0.2, t)})`;
+      ctx.lineWidth = px(lerp(w0, w1, t));
+      ctx.beginPath();
+      ctx.moveTo(...pts[k - 1]);
+      ctx.lineTo(...pts[k]);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+  leafT();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,196,120,0.7)';
+  ctx.lineWidth = px(2);
+  ctx.shadowColor = 'rgba(255,170,90,0.8)';
+  ctx.shadowBlur = 8 * u;
+  ctx.stroke(leftEdge);
+  ctx.restore();
+
+  // ---- the digital half, drawn on its own layer so the 半疯 variant can tear it ----
+  const sz = p * 0.8;
+  const round = sz * 0.22;
+  // The cells to draw: [i, j, colour, alpha, size]. The leaf's veins carry on across the seam as
+  // lines of gold cells.
+  const cr = mulberry32(seed + 1);
+  const VEIN_GOLD = [255, 226, 168];
+  const cells = [];
+  for (let k = 0; k < NI * NJ; k++) {
+    const i = k % NI;
+    const j = (k / NI) | 0;
+    const v = cr();
+    if (cur[k]) {
+      let c = ICE;
+      let a;
+      if (inLeaf[k]) {
+        a = 0.62 + 0.38 * v;
+        if (veinCell[k]) [c, a] = [VEIN_GOLD, 0.95];
+        else if (v > 0.975) c = mix(ICE, [235, 250, 255], 0.65);
+      } else a = clamp(1 - dout[k] / 5) * (0.55 + 0.45 * v);
+      cells.push([i, j, c, a, sz]);
+    } else if (last[k] >= 0) {
+      // Was alive a generation or more ago: a faint trace where a cell has gone.
+      cells.push([i, j, ICE, (0.1 * (last[k] + 1)) / (gens + 1), sz * 0.7]);
+    }
+  }
+  for (const [k, a] of glider) cells.push([k % NI, (k / NI) | 0, mix(ICE, [235, 250, 255], 0.4), a, sz]);
+  // solid: every cell grown to the full pitch, with no glow and no outline, so the cells merge into
+  // one shape (used for the 半疯 colour fringes, which belong on the shape's edges, not between cells).
+  // opaque: the same shape with every cell at full strength, to cut the fringes away cleanly.
+  const drawDigital = (solid = false, opaque = false) => {
+    const c = layer(w);
+    const g = c.getContext('2d');
+    leafT(g);
+    if (!solid) {
+      g.strokeStyle = rgba(ICE, 0.32);
+      g.lineWidth = px(1.6);
+      g.stroke(rightEdge);
+      g.shadowColor = rgba(ICE, 0.85);
+      g.shadowBlur = 8 * u;
+    }
+    for (const [i, j, col, a, s0] of cells) {
+      const s = solid ? p * 1.02 : s0;
+      g.fillStyle = rgba(col, opaque ? 1 : a);
+      g.beginPath();
+      if (solid) g.rect(cellX(i) - s / 2, cellY(j) - s / 2, s, s);
+      else if (g.roundRect) g.roundRect(cellX(i) - s / 2, cellY(j) - s / 2, s, s, round);
+      else g.rect(cellX(i) - s / 2, cellY(j) - s / 2, s, s);
+      g.fill();
+    }
+    return c;
+  };
+  const dig = drawDigital();
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (glitch) {
+    // 半疯: horizontal strips of the screen slip to the right (fixed strips, so the picture is
+    // repeatable), then a red fringe on the left of every cell and a blue one on the right.
+    // [top, height, shift] in px at 1080.
+    const STRIPS = [[268, 16, 30], [404, 40, 54], [452, 10, 22], [548, 24, 36], [636, 12, 70], [720, 30, 26]];
+    const tear = (src) => {
+      const t = layer(w);
+      const g = t.getContext('2d');
+      g.drawImage(src, 0, 0);
+      for (const [top, h, dx] of STRIPS) {
+        const Y = Math.round(top * u);
+        const H = Math.max(1, Math.round(h * u));
+        g.clearRect(0, Y, w, H);
+        g.drawImage(src, 0, Y, w, H, Math.round(dx * u), Y, w, H);
+      }
+      return t;
+    };
+    const torn = tear(dig);
+    const shape = tear(drawDigital(true));
+    const cut = tear(drawDigital(true, true));
+    // A tinted copy of the shape, shifted by dx, with the part that lies over the shape cut away:
+    // only the fringe outside the edges shows, and the cells keep their own colour.
+    const fringe = (col, dx) => {
+      const t = layer(w);
+      const g = t.getContext('2d');
+      g.drawImage(shape, 0, 0);
+      g.globalCompositeOperation = 'source-in';
+      g.fillStyle = col;
+      g.fillRect(0, 0, w, w);
+      g.globalCompositeOperation = 'destination-out';
+      g.drawImage(cut, -dx, 0);
+      return t;
+    };
+    ctx.drawImage(torn, 0, 0);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.8;
+    for (const [col, dx] of [['rgb(255,56,96)', -7 * u], ['rgb(48,112,255)', 7 * u]]) ctx.drawImage(fringe(col, dx), dx, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  } else ctx.drawImage(dig, 0, 0);
+  ctx.restore();
+
+  // ---- the seam: the midrib, where the leaf turns into code ----
+  leafT();
+  const seam = new Path2D();
+  seam.moveTo(0, -0.02);
+  seam.lineTo(0, 1);
+  const fade = (c, a) => {
+    const g = ctx.createLinearGradient(0, -0.02, 0, 1);
+    g.addColorStop(0, rgba(c, 0));
+    g.addColorStop(0.12, rgba(c, a));
+    g.addColorStop(0.85, rgba(c, a));
+    g.addColorStop(1, rgba(c, a * 0.3));
+    return g;
+  };
+  ctx.save();
+  ctx.lineCap = 'round';
+  for (const [dx, c, a, lw, blur] of [[-3, [255, 170, 90], 0.45, 4, 14], [3, ICE, 0.45, 4, 14], [0, [255, 248, 235], 1, 2.2, 8]]) {
     ctx.save();
-    ctx.clip(f);
-    ctx.filter = `blur(${Math.max(1, Math.round(12 * u))}px)`;
-    ctx.strokeStyle = `rgba(${GOLD},${a})`;
-    ctx.lineWidth = 30 * u;
-    ctx.stroke(f);
-    ctx.filter = 'none';
+    ctx.translate(px(dx), 0);
+    ctx.strokeStyle = fade(c, a);
+    ctx.lineWidth = px(lw);
+    ctx.shadowColor = rgba(c, 0.9);
+    ctx.shadowBlur = blur * u;
+    ctx.stroke(seam);
     ctx.restore();
   }
-  // Pips: discs in each face's own plane, brightest in the middle.
-  const pips = (n, origin, a, b, core, edge, alpha, glow) => {
-    const r = n === 1 ? 0.15 : 0.1;
-    for (const [s, t] of PIPS[n]) {
-      ctx.save();
-      ctx.transform(a[0], a[1], b[0], b[1], origin[0] + s * a[0] + t * b[0], origin[1] + s * a[1] + t * b[1]);
-      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-      g.addColorStop(0, `rgba(${core},${alpha})`);
-      g.addColorStop(0.55, `rgba(${core},${alpha})`);
-      g.addColorStop(1, `rgba(${edge},${alpha})`);
-      ctx.shadowColor = `rgba(${edge},0.9)`;
-      ctx.shadowBlur = glow * u;
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  };
-  pips(1, P(0, 0, 1), ex, ey, WARM, GOLD, 1, 30);
-  pips(2, P(1, 0, 1), ey, [-ez[0], -ez[1]], '252,224,160', GOLD, 0.92, 20);
-  pips(3, P(0, 1, 1), ex, [-ez[0], -ez[1]], GOLD, '214,170,92', 0.78, 16);
-  // The three inner edges, finer than the outline.
-  const inner = new Path2D();
-  for (const q of [P(1, 0, 1), P(0, 1, 1), P(1, 1, 0)]) {
-    inner.moveTo(...P(1, 1, 1));
-    inner.lineTo(...q);
-  }
-  glowLine(ctx, inner, GOLD, 2.4 * u, 0.7, 10 * u);
   ctx.restore();
-  glowLine(ctx, hull, GOLD, 4 * u, 0.95, 22 * u);
-  // A glint on the near top corner.
-  ctx.globalCompositeOperation = 'lighter';
-  const [gx, gy] = P(1, 1, 1);
-  dot(ctx, WARM, gx, gy, 30 * u, 0.85);
-  ctx.globalCompositeOperation = 'source-over';
   ctx.restore();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
-// C · 钟形: a Galton board's result. 200,000 balls, each knocked left or right at random by 30 rows
-// of pegs, land in 31 bins. The pile's height in each bin is the simulated count (shaped within the
-// bin along the normal curve the counts approach, drawn in ice blue), shown as 3,200 grains of
-// light. With 12,000 balls a bin 2 sd short left a visible bite out of the peak; with 200,000 every
-// pile sits within a few pixels of the curve (the gap is logged). The pile stands on a glass floor
-// that reflects it; one more ball is still falling.
-const binom = (n, k) => {
-  let c = 1;
-  for (let i = 1; i <= k; i++) c = (c * (n - k + i)) / i;
-  return c;
+export const avatars = {
+  半枫: (ctx, o) => drawHalfMaple(ctx, o),
+  半疯: (ctx, o) => drawHalfMaple(ctx, { ...o, glitch: true }),
 };
-export function drawBell(ctx, { w = S } = {}) {
-  const u = w / S;
-  const rows = 30;
-  const N = 200000;
-  const rand = mulberry32(1886);
-  const bins = new Array(rows + 1).fill(0);
-  for (let i = 0; i < N; i++) {
-    let k = 0;
-    for (let r = 0; r < rows; r++) if (rand() < 0.5) k++;
-    bins[k]++;
-  }
-  const cx = w / 2;
-  const base = w * 0.655;
-  const sd = Math.sqrt(rows) / 2;
-  const bw = (0.8 * w) / (6.4 * sd);
-  const hMax = 0.3 * w;
-  const mid = rows / 2;
-  const pdf = (b) => Math.exp(-0.5 * ((b - mid) / sd) ** 2);
-  const peakN = N / (sd * Math.sqrt(2 * Math.PI)); // the normal curve's height in balls per bin
-  const max = Math.max(...bins);
-  const expected = bins.map((_, k) => (N * binom(rows, k)) / 2 ** rows);
-  const worstSd = Math.max(...bins.map((n, k) => Math.abs(n - expected[k]) / Math.sqrt(expected[k] + 1)));
-  // What shows: the gap between each bin's pile and the drawn curve, as a share of the curve's peak.
-  const gap = Math.max(...bins.map((n, k) => Math.abs(n / peakN - pdf(k))));
-  console.log(`[avatar C] ${N} balls through ${rows} rows of pegs; tallest bin ${max} (bin ${bins.indexOf(max)}); largest miss from the binomial expectation ${worstSd.toFixed(2)} sd; largest gap between a pile and the normal curve ${(100 * gap).toFixed(2)}% of the peak (${(gap * hMax).toFixed(1)} px)`);
-  const X = (b) => cx + (b - mid) * bw;
-  const curveY = (b) => base - hMax * pdf(b);
-  const hill = (lo, hi, f) => {
-    const p = new Path2D();
-    p.moveTo(X(lo), base);
-    for (let k = 0; k <= 240; k++) {
-      const b = lerp(lo, hi, k / 240);
-      p.lineTo(X(b), base - hMax * pdf(b) * f(b));
-    }
-    p.lineTo(X(hi), base);
-    p.closePath();
-    return p;
-  };
-  // The pile, drawn once into its own layer so the floor can reflect it.
-  const pile = layer(w);
-  const g = pile.getContext('2d');
-  const ratio = (b) => {
-    const k = clamp(Math.round(b), 0, rows);
-    return bins[k] / (peakN * pdf(k));
-  };
-  const shape = hill(-1.5, rows + 1.5, (b) => (Math.abs(b - mid) > 4.2 * sd ? 1 : ratio(b)));
-  const hg = g.createLinearGradient(0, base - hMax, 0, base);
-  hg.addColorStop(0, `rgba(${GOLD},0.5)`);
-  hg.addColorStop(1, `rgba(${GOLD},0.14)`);
-  g.save();
-  g.shadowColor = `rgba(${GOLD},0.45)`;
-  g.shadowBlur = 44 * u;
-  g.fillStyle = hg;
-  g.fill(shape);
-  g.restore();
-  const jr = mulberry32(7);
-  const per = N / 3200; // 3,200 grains of light in all
-  g.globalCompositeOperation = 'lighter';
-  bins.forEach((n, k) => {
-    const grains = Math.round(n / per);
-    for (let j = 0; j < grains; j++) {
-      const b = k + jr() - 0.5;
-      const h = hMax * pdf(b) * ratio(k);
-      const v = jr();
-      const y = base - v * h;
-      const nearTop = v > 0.9;
-      dot(g, nearTop ? WARM : GOLD, X(b), y, (3.5 + 3 * jr()) * u, (nearTop ? 0.55 : 0.32) + 0.35 * jr());
-    }
-  });
-  g.globalCompositeOperation = 'source-over';
-  g.globalAlpha = 1;
-  ctx.save();
-  backdrop(ctx, w, 37);
-  // The reflection: the pile flipped under the floor, fading out.
-  const refl = layer(w);
-  const rg = refl.getContext('2d');
-  rg.save();
-  rg.translate(0, 2 * base + 16 * u);
-  rg.scale(1, -1);
-  rg.drawImage(pile, 0, 0);
-  rg.restore();
-  rg.globalCompositeOperation = 'destination-in';
-  const fade = rg.createLinearGradient(0, base, 0, base + 0.2 * w);
-  fade.addColorStop(0, 'rgba(0,0,0,0.32)');
-  fade.addColorStop(1, 'rgba(0,0,0,0)');
-  rg.fillStyle = fade;
-  rg.fillRect(0, 0, w, w);
-  ctx.drawImage(refl, 0, 0);
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.drawImage(pile, 0, 0);
-  ctx.globalCompositeOperation = 'source-over';
-  // The normal curve the bins approach.
-  const curve = new Path2D();
-  for (let k = 0; k <= 240; k++) {
-    const b = lerp(-1.5, rows + 1.5, k / 240);
-    if (k === 0) curve.moveTo(X(b), curveY(b));
-    else curve.lineTo(X(b), curveY(b));
-  }
-  glowLine(ctx, curve, ICE, 3 * u, 0.9, 14 * u);
-  const floor = new Path2D();
-  floor.moveTo(X(-1.5), base + 8 * u);
-  floor.lineTo(X(rows + 1.5), base + 8 * u);
-  glowLine(ctx, floor, WARM, 2 * u, 0.4, 0);
-  // One more ball, still falling, off to the right of the peak.
-  ctx.globalCompositeOperation = 'lighter';
-  const fx = X(mid + 2.6);
-  const fy = base - hMax - 0.09 * w;
-  for (let k = 1; k < 16; k++) dot(ctx, GOLD, fx, fy - k * 7 * u, (20 - k) * u, 0.4 * (1 - k / 16));
-  dot(ctx, GOLD, fx, fy, 70 * u, 0.5);
-  dot(ctx, WARM, fx, fy, 30 * u, 1);
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.restore();
-}
-
-export const avatars = { A: (ctx, o) => drawPlanet(ctx, o), B: (ctx, o) => drawDie(ctx, o), C: (ctx, o) => drawBell(ctx, o) };
 
 export default {
   meta: { title: '账号头像', output: '算给你看.mp4' },
@@ -457,5 +592,5 @@ export default {
   fps: 30,
   duration: 1,
   avatars,
-  draw: (ctx) => drawPlanet(ctx),
+  draw: (ctx) => drawHalfMaple(ctx),
 };
