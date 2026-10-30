@@ -1,0 +1,6 @@
+# Preview stills and inspection sheets are regenerated on demand.
+previews/
+node_modules/
+
+# Local scratch files (copies for review, one-off checks).
+scratch/
